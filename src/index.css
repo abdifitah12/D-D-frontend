@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-dark:   #09281f;
+  --color-brand-primary:#6b8e6e;
+  --color-brand-accent: #e9d5ff;
+  --color-brand-rose:   #fce7f3;
+  --color-brand-cream:  #fff4e6;
+
+  --font-display: ui-serif, Georgia, serif;
+}
+
+/* helpers */
+.btn { @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition; }
+.btn-primary { @apply bg-brand-primary text-white hover:opacity-90; }
+.btn-ghost  { @apply border border-black/10 hover:bg-black/5; }
+.card       { @apply rounded-2xl border border-black/10 bg-white shadow-sm; }
