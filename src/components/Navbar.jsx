@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
+ 
+
 
 const NavItem = ({ to, label, onClick }) => (
   <NavLink
@@ -26,9 +28,12 @@ export default function Navbar() {
       </div>
 
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-        <Link to="/" className="font-display text-xl">
-          <span className="font-bold">D&D</span> CAFE
-        </Link>
+       <Link to="/" className="flex items-center">
+  <img src="/DND.jpg" alt="Cafe logo"   className="h-32 w-32 rounded-full object-cover"
+  style={{ border: "2px solid #6b8e6e" }}/>
+</Link>
+
+
 
         {/* Desktop */}
         <div className="hidden md:flex items-center gap-2">
