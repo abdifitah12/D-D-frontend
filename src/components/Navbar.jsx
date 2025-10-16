@@ -33,8 +33,7 @@ export default function Navbar() {
 </Link>
 
 
-
-        {/* Desktop */}
+ {/* Desktop */}
         <div className="hidden md:flex items-center gap-2">
           <NavItem to="/" label="Home" />
           <NavItem to="/products" label="Products" />
