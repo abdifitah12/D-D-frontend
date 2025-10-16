@@ -28,7 +28,7 @@ export default function Navbar() {
       </div>
      <nav   className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
        <Link to="/" className="flex items-center">
-  <img src="/DND.jpg" alt="Cafe logo"   className="h-32 w-32 rounded-full object-cover"
+  <img src="/image3.jpg" alt="Cafe logo"   className="h-12 w-12 rounded-full object-cover"
   style={{ border: "2px solid #6b8e6e" }}/>
 </Link>
 
