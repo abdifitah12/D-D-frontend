@@ -32,8 +32,7 @@ export default function Navbar() {
   style={{ border: "2px solid #6b8e6e" }}/>
 </Link>
 
-
- {/* Desktop */}
+{/* Desktop */}
         <div className="hidden md:flex items-center gap-2">
           <NavItem to="/" label="Home" />
           <NavItem to="/products" label="Products" />
