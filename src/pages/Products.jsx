@@ -1,17 +1,46 @@
 import { products } from "../data/products.js";
 
 function ProductCard({ p }) {
+  // Decide which video (if any) belongs to this product
+  let videoSrc = null;
+  if (p.id === 1) videoSrc = "/cupcake.mp4";
+  if (p.id === 2) videoSrc = "/pie.mp4";
+  if (p.id === 3) videoSrc = "/latte.mp4";
+  if (p.id === 4) videoSrc = "/cold.mp4";
+  if (p.id === 5) videoSrc = "/banana.mp4";
+  if (p.id === 6) videoSrc = "/chocolate.mp4";
+
   return (
-    <div className="card overflow-hidden">
-      <div className="aspect-square bg-gradient-to-br from-brand.rose to-brand.accent grid place-items-center text-6xl">
-        <span aria-hidden="true">{p.icon}</span>
+    <div className="card overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition">
+      {/* Video or Emoji Block */}
+      <div className="aspect-square relative">
+        {videoSrc ? (
+          <video
+            className="h-full w-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+            src={videoSrc}
+          />
+        ) : (
+          <div className="h-full w-full bg-gradient-to-br from-brand.rose to-brand.accent grid place-items-center text-6xl">
+            <span aria-hidden="true">{p.icon}</span>
+          </div>
+        )}
       </div>
-      <div className="p-4">
+
+      {/* Info Section */}
+      <div className="p-4 bg-white">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold">{p.name}</h3>
-          <span className="text-sm px-2 py-1 rounded-full bg-black/5">{p.tag}</span>
+          <h3 className="font-semibold text-lg">{p.name}</h3>
+          <span className="text-xs font-medium px-2 py-1 rounded-full bg-black/5">
+            {p.tag}
+          </span>
         </div>
-        <div className="mt-2 text-brand-dark font-semibold">${p.price.toFixed(2)}</div>
+        <div className="mt-2 text-brand-dark font-semibold text-lg">
+          ${p.price.toFixed(2)}
+        </div>
         <button className="btn btn-primary mt-3 w-full">Add</button>
       </div>
     </div>
@@ -21,9 +50,14 @@ function ProductCard({ p }) {
 export default function Products() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="font-display text-3xl mb-6">Products</h1>
+      <h1 className="font-display text-3xl mb-6 text-center md:text-left">
+        Products
+      </h1>
+
       <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
-        {products.map((p) => <ProductCard key={p.id} p={p} />)}
+        {products.map((p) => (
+          <ProductCard key={p.id} p={p} />
+        ))}
       </div>
     </div>
   );
