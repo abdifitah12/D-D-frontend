@@ -57,13 +57,18 @@ export default function Navbar() {
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
         {/* Left: Logo */}
         <Link to="/" className="flex items-center shrink-0" onClick={() => goTo("home")}>
-          <img
-            src="/image3.jpg"
+                    <img
+            src="/moon.png"
             alt="Cafe logo"
-            className="h-12 w-12 rounded-full object-cover"
-            style={{ border: "2px solid #6b8e6e" }}
-          />
-        </Link>
+            className="h-16 w-16 rounded-full object-cover shadow-lg brightness-125 contrast-110"
+            style={{
+              border: "2px solid #6b8e6e",
+              backgroundColor: "white",
+              padding: "4px",
+            }}
+/>
+
+      </Link>
 
         {/* CENTER (mobile-only): brand text between logo and burger */}
         <div className="md:hidden flex-1 text-center">
