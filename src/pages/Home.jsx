@@ -146,7 +146,7 @@ export default function Home() {
       </p>
 
       <p className="text-slate-600">
-        ⏰ Open daily · 7:00 AM – 6:00 PM
+        ⏰ Open daily · 4:00 PM – 10:00 PM
       </p>
     </div>
 
@@ -201,7 +201,7 @@ export default function Home() {
 
   {/* CONTACT INFO */}
   <div className="space-y-2 text-slate-700">
-    <p>📞 <strong>Phone:</strong> +1 (816) 602-7654</p>
+    <p>📞 <strong>Phone:</strong> +1 (647)4634557</p>
     <p>📍 <strong>Address:</strong> 2102 Kipling Ave, Etobicoke, ON M9W 4K5</p>
     {/* <p>✉️ <strong>Email:</strong> hello@dndcafe.com</p> */}
   </div>
@@ -249,7 +249,7 @@ export default function Home() {
     </a>
 
     <a
-      href="https://wa.me/18166027654"
+      href="https://wa.me/6474634557"
       target="_blank"
       rel="noreferrer"
       className="p-2 rounded-full hover:bg-slate-100 text-green-600"
@@ -261,37 +261,44 @@ export default function Home() {
 
   {/* OPENING HOURS */}
   <div className="mx-auto max-w-md text-slate-700 space-y-2">
-    <h3 className="font-semibold text-lg mt-4">Opening Hours</h3>
+  <h3 className="font-semibold text-lg mt-4">Opening Hours</h3>
 
-    <div className="flex justify-between border-b pb-1">
-      <span>Monday</span>
-      <span>4pm – 9pm</span>
-    </div>
-    <div className="flex justify-between border-b pb-1">
-      <span>Tuesday</span>
-      <span>2pm – 9pm</span>
-    </div>
-    <div className="flex justify-between border-b pb-1">
-      <span>Wednesday</span>
-      <span>2pm – 9pm</span>
-    </div>
-    <div className="flex justify-between border-b pb-1">
-      <span>Thursday</span>
-      <span>2pm – 9pm</span>
-    </div>
-    <div className="flex justify-between border-b pb-1 font-semibold">
-      <span>Friday</span>
-      <span>4pm – 12am</span>
-    </div>
-    <div className="flex justify-between border-b pb-1 font-semibold">
-      <span>Saturday</span>
-      <span>4pm – 12am</span>
-    </div>
-    <div className="flex justify-between">
-      <span>Sunday</span>
-      <span>4pm – 9pm</span>
-    </div>
+  <div className="flex justify-between border-b pb-1">
+    <span>Monday</span>
+    <span>4 PM – 10 PM</span>
   </div>
+
+  <div className="flex justify-between border-b pb-1">
+    <span>Tuesday</span>
+    <span>4 PM – 10 PM</span>
+  </div>
+
+  <div className="flex justify-between border-b pb-1">
+    <span>Wednesday</span>
+    <span>4 PM – 10 PM</span>
+  </div>
+
+  <div className="flex justify-between border-b pb-1">
+    <span>Thursday</span>
+    <span>4 PM – 10 PM</span>
+  </div>
+
+  <div className="flex justify-between border-b pb-1 font-semibold">
+    <span>Friday</span>
+    <span>4 PM – 12 AM</span>
+  </div>
+
+  <div className="flex justify-between border-b pb-1 font-semibold">
+    <span>Saturday</span>
+    <span>4 PM – 12 AM</span>
+  </div>
+
+  <div className="flex justify-between">
+    <span>Sunday</span>
+    <span>4 PM – 8 PM</span>
+  </div>
+</div>
+
 
   
 </section>

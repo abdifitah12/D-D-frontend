@@ -58,7 +58,7 @@ export default function Navbar() {
         {/* Left: Logo */}
         <Link to="/" className="flex items-center shrink-0" onClick={() => goTo("home")}>
                     <img
-            src="/moon.png"
+            src="/nav2.jpg"
             alt="Cafe logo"
             className="h-16 w-16 rounded-full object-cover shadow-lg brightness-125 contrast-110"
             style={{
