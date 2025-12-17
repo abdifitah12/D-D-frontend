@@ -1,7 +1,6 @@
 import { products } from "../data/products.js";
 
 function ProductCard({ p }) {
-  // Decide which video (if any) belongs to this product
   let videoSrc = null;
   if (p.id === 1) videoSrc = "/cupcake.mp4";
   if (p.id === 2) videoSrc = "/pie.mp4";
@@ -11,8 +10,7 @@ function ProductCard({ p }) {
   if (p.id === 6) videoSrc = "/chocolate.mp4";
 
   return (
-    <div className="card overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition">
-      {/* Video or Emoji Block */}
+    <div className="card overflow-hidden rounded-2xl shadow-md hover:shadow-lg transition border bg-white">
       <div className="aspect-square relative">
         {videoSrc ? (
           <video
@@ -24,24 +22,25 @@ function ProductCard({ p }) {
             src={videoSrc}
           />
         ) : (
-          <div className="h-full w-full bg-gradient-to-br from-brand.rose to-brand.accent grid place-items-center text-6xl">
+          <div className="h-full w-full bg-slate-100 grid place-items-center text-6xl">
             <span aria-hidden="true">{p.icon}</span>
           </div>
         )}
       </div>
 
-      {/* Info Section */}
-      <div className="p-4 bg-white">
-        <div className="flex items-center justify-between">
+      <div className="p-4">
+        <div className="flex items-center justify-between gap-2">
           <h3 className="font-semibold text-lg">{p.name}</h3>
           <span className="text-xs font-medium px-2 py-1 rounded-full bg-black/5">
             {p.tag}
           </span>
         </div>
-        <div className="mt-2 text-brand-dark font-semibold text-lg">
-          ${p.price.toFixed(2)}
-        </div>
-        <button className="btn btn-primary mt-3 w-full">Add</button>
+
+        <div className="mt-2 font-semibold text-lg">${p.price.toFixed(2)}</div>
+
+        <button className="mt-3 w-full rounded-xl bg-green-700 text-white py-2 font-semibold hover:opacity-90">
+          Add
+        </button>
       </div>
     </div>
   );

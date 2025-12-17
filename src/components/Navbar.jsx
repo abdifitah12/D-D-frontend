@@ -88,7 +88,7 @@ export default function Navbar() {
           <DesktopItem label="Location" onClick={() => goTo("location")} />
           <DesktopItem label="About" onClick={() => goTo("about")} />
           <DesktopItem label="Contact" onClick={() => goTo("contact")} />
-          <Link to="/products" className="btn btn-primary ml-2">ORDER NOW</Link>
+          <Link to="/contact" className="btn btn-primary ml-2">ORDER NOW</Link>
         </div>
 
         {/* Right: Mobile burger */}
