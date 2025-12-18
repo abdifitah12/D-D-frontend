@@ -139,15 +139,13 @@ export default function Home() {
   <div className="mt-8 grid gap-8 md:grid-cols-2 items-center">
     {/* LEFT: Address info */}
     <div className="space-y-3 text-center md:text-left">
-      <h3 className="text-xl font-semibold">Downtown Café</h3>
+      <h3 className="text-center font-semibold">D&amp;D Café</h3>
 
       <p className="text-slate-600">
         📍 2102 Kipling Ave, Etobicoke, ON M9W 4K5, Canada
       </p>
 
-      <p className="text-slate-600">
-        ⏰ Open daily · 4:00 PM – 10:00 PM
-      </p>
+      
     </div>
 
     {/* RIGHT: Map */}

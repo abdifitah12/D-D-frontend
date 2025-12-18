@@ -112,7 +112,7 @@ export default function Navbar() {
             <MobileItem label="About" onClick={() => goTo("about")} />
             <MobileItem label="Contact" onClick={() => goTo("contact")} />
             <Link
-              to="/products"
+              to="/contact"
               onClick={() => setOpen(false)}
               className="btn btn-primary mt-2"
             >
