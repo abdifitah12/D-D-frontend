@@ -50,7 +50,7 @@ export default function Footer() {
           </h4>
 
           <p className="text-sm text-slate-600 mb-4">
-            +1 (816) 602-7654
+           +1 6474634557
           </p>
 
           <div className="flex gap-4 text-lg">

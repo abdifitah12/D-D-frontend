@@ -1,5 +1,5 @@
 export const products = [
-  { id: 1, name: "Cupcake", price: 4.5, tag: "Sweet", icon: "🧁" },
+  { id: 1, name: "Sambuus", price: 2, tag: "fav", icon: "🧁" },
   { id: 2, name: "Pie Slice", price: 5.0, tag: "Classic", icon: "🥧" },
   { id: 3, name: "Latte", price: 4.75, tag: "Coffee", icon: "☕" },
   { id: 4, name: "Cold Brew", price: 4.25, tag: "Chilled", icon: "🧊" },
