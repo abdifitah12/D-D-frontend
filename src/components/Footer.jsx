@@ -50,7 +50,7 @@ export default function Footer() {
           </h4>
 
           <p className="text-sm text-slate-600 mb-4">
-           +1 6474634557
+           +16474634557
           </p>
 
           <div className="flex gap-4 text-lg">
@@ -85,7 +85,7 @@ export default function Footer() {
             </a>
 
             <a
-              href="https://wa.me/18166027654"
+              href="https://wa.me/16474634557"
               target="_blank"
               rel="noreferrer"
               className="p-2 rounded-full hover:bg-slate-100 text-green-600 transition"
