@@ -3,7 +3,7 @@ import { products } from "../data/products.js";
 function ProductCard({ p }) {
   let videoSrc = null;
   if (p.id === 1) videoSrc = "/sambuusa.mp4";
-  if (p.id === 2) videoSrc = "/pie.mp4";
+  if (p.id === 2) videoSrc = "/tea.mp4";
   if (p.id === 3) videoSrc = "/latte.mp4";
   if (p.id === 4) videoSrc = "/cold.mp4";
   if (p.id === 5) videoSrc = "/banana.mp4";
