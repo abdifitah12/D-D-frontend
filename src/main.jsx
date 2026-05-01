@@ -6,9 +6,10 @@ import App from "./App.jsx";
 
 import Home from "./pages/Home.jsx";
 import Products from "./pages/Products.jsx";
-// import About from "./pages/About.jsx";
- import Contact from "./pages/Contact.jsx";
-// import Location from "./pages/Location.jsx";
+import Contact from "./pages/Contact.jsx";
+import Events from "./pages/Events.jsx";
+import AdminEvents from "./pages/AdminEvents.jsx";
+import AdminLogin from "./pages/AdminLogin.jsx";
 
 const router = createBrowserRouter([
   {
@@ -17,9 +18,10 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: "products", element: <Products /> },
-      // { path: "about", element: <About /> },
-       { path: "contact", element: <Contact /> },
-      // { path: "location", element: <Location /> },
+      { path: "contact", element: <Contact /> },
+      { path: "events", element: <Events /> },
+      { path: "admin/login", element: <AdminLogin /> },
+      { path: "admin/events", element: <AdminEvents /> },
     ],
   },
 ]);

@@ -15,3 +15,34 @@
 .btn-primary { @apply bg-brand-primary text-white hover:opacity-90; }
 .btn-ghost  { @apply border border-black/10 hover:bg-black/5; }
 .card       { @apply rounded-2xl border border-black/10 bg-white shadow-sm; }
+
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeUp {
+  animation: fadeUp 0.7s ease forwards;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeUp {
+  animation: fadeUp 0.7s ease forwards;
+}
