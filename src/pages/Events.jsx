@@ -39,15 +39,15 @@ export default function Events() {
               {/* IMAGE */}
               <div className="h-64 md:h-full">
                 <img
-                src={
-                  e.imageUrl?.startsWith("http")
-                    ? e.imageUrl
-                    : `https://dnd-cafe-ece43a569fa1.herokuapp.com${e.imageUrl}`
-                }
-                alt={e.title}
-                className="w-full h-full object-cover"
-                onError={(x) => (x.currentTarget.src = "/event.jpg")}
-              />
+            src={
+              e.imageUrl?.startsWith("http")
+                ? e.imageUrl
+                : `https://dnd-cafe-ece43a569fa1.herokuapp.com${e.imageUrl}`
+            }
+            alt={e.title}
+            className="w-full h-full object-cover"
+            onError={(x) => (x.currentTarget.src = "/event.jpg")}
+          />
               </div>
 
               {/* CONTENT */}
