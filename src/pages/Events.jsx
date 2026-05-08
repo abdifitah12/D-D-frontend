@@ -29,6 +29,13 @@ export default function Events() {
           </p>
         </div>
 
+          <a
+          href="/events/history"
+          className="mt-6 inline-block rounded-full bg-green-700 px-6 py-3 font-semibold text-white hover:bg-green-800"
+        >
+          View Event History
+        </a>
+
         {/* EVENTS */}
         <div className="space-y-8">
           {events.map((e) => (
@@ -38,7 +45,7 @@ export default function Events() {
             >
               {/* IMAGE */}
               <div className="h-64 md:h-full">
-                <img
+                {/* <img
             src={
               e.imageUrl?.startsWith("http")
                 ? e.imageUrl
@@ -47,7 +54,15 @@ export default function Events() {
             alt={e.title}
             className="w-full h-full object-cover"
             onError={(x) => (x.currentTarget.src = "/event.jpg")}
-          />
+          /> */}
+
+
+                        <img
+                src={e.imageUrl || "/event.jpg"}
+                alt={e.title}
+                className="w-full h-full object-cover"
+                onError={(x) => (x.currentTarget.src = "/event.jpg")}
+              />
               </div>
 
               {/* CONTENT */}

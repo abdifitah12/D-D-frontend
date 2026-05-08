@@ -6,19 +6,23 @@ import {
   updateEvent,
   deleteEvent,
 } from "../api/events";
-import { clearAdminAuth, getAdminAuth, isAdminAuthenticated } from "../utils/adminAuth";
+import { createEventHistory } from "../api/eventHistory";
+import {
+  clearAdminAuth,
+  getAdminAuth,
+  isAdminAuthenticated,
+} from "../utils/adminAuth";
 
 const emptyForm = {
+  type: "event",
   title: "",
   description: "",
   location: "",
   date: "",
   time: "",
-  imageUrl: "",
 };
 
 export default function AdminEvents() {
-  
   const [events, setEvents] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -26,10 +30,9 @@ export default function AdminEvents() {
   const [loading, setLoading] = useState(true);
   const [selectedFileName, setSelectedFileName] = useState("");
   const [imageFile, setImageFile] = useState(null);
+
   const navigate = useNavigate();
   const auth = getAdminAuth();
-
-  
 
   if (!isAdminAuthenticated()) {
     return <Navigate to="/admin/login" replace />;
@@ -58,77 +61,72 @@ export default function AdminEvents() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
- const clearForm = () => {
-  setForm(emptyForm);
-  setEditingId(null);
-  setSelectedFileName("");
-  setImageFile(null);
-};
+  const clearForm = () => {
+    setForm(emptyForm);
+    setEditingId(null);
+    setSelectedFileName("");
+    setImageFile(null);
+  };
 
   const handleImageFileChange = (e) => {
-  const file = e.target.files?.[0];
+    const file = e.target.files?.[0];
 
-  if (!file) {
-    setSelectedFileName("");
-    setImageFile(null);
-    return;
-  }
+    if (!file) {
+      setSelectedFileName("");
+      setImageFile(null);
+      return;
+    }
 
-  if (!file.type.startsWith("image/")) {
-    setError("Please choose an image file.");
-    setSelectedFileName("");
-    setImageFile(null);
-    return;
-  }
+    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+      setError("Please choose an image or video file.");
+      setSelectedFileName("");
+      setImageFile(null);
+      return;
+    }
 
-  setImageFile(file); // ✅ IMPORTANT
-  setSelectedFileName(file.name);
-
-  // (optional preview)
-  const reader = new FileReader();
-  reader.onload = () => {
-    setForm((prev) => ({
-      ...prev,
-      imageUrl: reader.result,
-    }));
+    setImageFile(file);
+    setSelectedFileName(file.name);
+    setError("");
   };
-  reader.readAsDataURL(file);
-};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
     try {
-      if (editingId) {
-        await updateEvent(
-          editingId,
-          buildEventPayload(form),
-          auth.username,
-          auth.password,
+      if (form.type === "history") {
+        await createEventHistory(
+          {
+            title: form.title,
+            description: form.description,
+          },
+          imageFile
         );
+      } else if (editingId) {
+        await updateEvent(editingId, form, auth.username, auth.password);
       } else {
-       await createEvent(form, imageFile, auth.username, auth.password);
+        await createEvent(form, imageFile, auth.username, auth.password);
       }
 
       clearForm();
       loadEvents();
     } catch (err) {
-      setError(err.message || "Failed to save event");
+      setError(err.message || "Failed to save");
     }
   };
 
   const handleEdit = (event) => {
     setEditingId(event.id);
     setForm({
+      type: "event",
       title: event.title || "",
       description: event.description || "",
       location: event.location || "",
       date: event.date || "",
       time: event.time || "",
-      imageUrl: event.imageUrl || event.url || "",
     });
     setSelectedFileName("");
+    setImageFile(null);
   };
 
   const handleDelete = async (id) => {
@@ -156,7 +154,11 @@ export default function AdminEvents() {
               Admin Panel
             </p>
             <h1 className="text-3xl font-bold">
-              {editingId ? "Edit Event" : "Create Event"}
+              {form.type === "history"
+                ? "Create Event History"
+                : editingId
+                ? "Edit Event"
+                : "Create Event"}
             </h1>
           </div>
 
@@ -169,19 +171,29 @@ export default function AdminEvents() {
           </button>
         </div>
 
-        {error ? (
+        {error && (
           <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
-        ) : null}
+        )}
 
         <form onSubmit={handleSubmit} className="grid gap-4">
+          <select
+            name="type"
+            value={form.type}
+            onChange={handleChange}
+            className="rounded-2xl border px-4 py-3"
+          >
+            <option value="event">Event</option>
+            <option value="history">Event History</option>
+          </select>
+
           <input
             name="title"
             value={form.title}
             onChange={handleChange}
             className="rounded-2xl border px-4 py-3"
-            placeholder="Event title"
+            placeholder="Title"
             required
           />
 
@@ -190,60 +202,63 @@ export default function AdminEvents() {
             value={form.description}
             onChange={handleChange}
             className="rounded-2xl border px-4 py-3"
-            placeholder="Event description"
+            placeholder="Description"
             rows="4"
             required
           />
 
-          <input
-            name="location"
-            value={form.location}
-            onChange={handleChange}
-            className="rounded-2xl border px-4 py-3"
-            placeholder="Location"
-            required
-          />
+          {form.type === "event" && (
+            <>
+              <input
+                name="location"
+                value={form.location}
+                onChange={handleChange}
+                className="rounded-2xl border px-4 py-3"
+                placeholder="Location"
+                required
+              />
 
-          <input
-            type="date"
-            name="date"
-            value={form.date}
-            onChange={handleChange}
-            className="rounded-2xl border px-4 py-3"
-            required
-          />
+              <input
+                type="date"
+                name="date"
+                value={form.date}
+                onChange={handleChange}
+                className="rounded-2xl border px-4 py-3"
+                required
+              />
 
-          <input
-            type="time"
-            name="time"
-            value={form.time}
-            onChange={handleChange}
-            className="rounded-2xl border px-4 py-3"
-            required
-          />
-
-          <input
-            name="imageUrl"
-            value={form.imageUrl}
-            onChange={handleChange}
-            className="rounded-2xl border px-4 py-3"
-            placeholder="Image URL or attached image data"
-          />
+              <input
+                type="time"
+                name="time"
+                value={form.time}
+                onChange={handleChange}
+                className="rounded-2xl border px-4 py-3"
+                required
+              />
+            </>
+          )}
 
           <div className="rounded-2xl border border-dashed px-4 py-3">
             <label className="block text-sm font-semibold text-slate-700">
-              Attach image from computer
+              {form.type === "history"
+                ? "Attach image or video"
+                : "Attach image from computer"}
             </label>
+
             <input
               type="file"
-              accept="image/*"
+              accept={form.type === "history" ? "image/*,video/*" : "image/*"}
               onChange={handleImageFileChange}
               className="mt-2 block w-full text-sm text-slate-600 file:mr-4 file:rounded-xl file:border-0 file:bg-green-700 file:px-4 file:py-2 file:font-semibold file:text-white"
+              required={!editingId}
             />
+
             <p className="mt-2 text-xs text-slate-500">
               {selectedFileName
                 ? `Attached file: ${selectedFileName}`
-                : "Attach an image file here, or paste an image URL above."}
+                : form.type === "history"
+                ? "Upload an image or video for event history."
+                : "Upload an image for the event."}
             </p>
           </div>
 
@@ -252,7 +267,11 @@ export default function AdminEvents() {
               type="submit"
               className="rounded-2xl bg-green-700 px-5 py-3 text-white font-semibold"
             >
-              {editingId ? "Update Event" : "Create Event"}
+              {form.type === "history"
+                ? "Create History"
+                : editingId
+                ? "Update Event"
+                : "Create Event"}
             </button>
 
             <button
@@ -276,71 +295,67 @@ export default function AdminEvents() {
             <p className="text-lg font-semibold text-slate-800">
               No events found yet.
             </p>
-            <p className="mt-2 text-slate-600">
-              Create your first event using the form on the left.
-            </p>
           </div>
         ) : (
           <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-2">
             {events.map((event) => (
               <div
-                  key={event.id}
-                  className="rounded-3xl border bg-white shadow-lg overflow-hidden transition hover:shadow-2xl"
-                >
+                key={event.id}
+                className="rounded-3xl border bg-white shadow-lg overflow-hidden transition hover:shadow-2xl"
+              >
                 <div className="h-72 md:h-80 bg-slate-100">
-                 <img
-                  src={`http://localhost:8080${event.imageUrl}`}
-                  alt={event.title}
-                  className="w-full h-full object-cover"
-                />
+                  <img
+                    src={event.imageUrl || "/event.jpg"}
+                    alt={event.title}
+                    className="w-full h-full object-cover"
+                    onError={(x) => (x.currentTarget.src = "/event.jpg")}
+                  />
                 </div>
 
                 <div className="p-8 md:p-10">
-  <h2 className="text-2xl md:text-3xl font-bold text-slate-900">
-    {event.title}
-  </h2>
+                  <h2 className="text-2xl md:text-3xl font-bold text-slate-900">
+                    {event.title}
+                  </h2>
 
-  <p className="mt-2 text-slate-600 text-base">
-    {event.description}
-  </p>
+                  <p className="mt-2 text-slate-600 text-base">
+                    {event.description}
+                  </p>
 
-  {/* INFO */}
-  <div className="mt-5 space-y-2 text-sm md:text-base text-slate-700">
-    <div className="flex items-center gap-2">
-      <span>📍</span>
-      <span className="font-semibold text-green-700">
-        {event.location || "No location"}
-      </span>
-    </div>
+                  <div className="mt-5 space-y-2 text-sm md:text-base text-slate-700">
+                    <div className="flex items-center gap-2">
+                      <span>📍</span>
+                      <span className="font-semibold text-green-700">
+                        {event.location || "No location"}
+                      </span>
+                    </div>
 
-    <div className="flex items-center gap-2">
-      <span>📅</span>
-      <span>{event.date || "No date"}</span>
-    </div>
+                    <div className="flex items-center gap-2">
+                      <span>📅</span>
+                      <span>{event.date || "No date"}</span>
+                    </div>
 
-    <div className="flex items-center gap-2">
-      <span>⏰</span>
-      <span>{formatTime(event.time)}</span>
-    </div>
-  </div>
+                    <div className="flex items-center gap-2">
+                      <span>⏰</span>
+                      <span>{formatTime(event.time)}</span>
+                    </div>
+                  </div>
 
-  {/* BUTTONS */}
-  <div className="mt-6 flex gap-3">
-    <button
-      onClick={() => handleEdit(event)}
-      className="rounded-2xl bg-amber-500 px-5 py-2 text-white font-semibold shadow hover:bg-amber-600 transition"
-    >
-      Edit
-    </button>
+                  <div className="mt-6 flex gap-3">
+                    <button
+                      onClick={() => handleEdit(event)}
+                      className="rounded-2xl bg-amber-500 px-5 py-2 text-white font-semibold shadow hover:bg-amber-600 transition"
+                    >
+                      Edit
+                    </button>
 
-    <button
-      onClick={() => handleDelete(event.id)}
-      className="rounded-2xl bg-red-600 px-5 py-2 text-white font-semibold shadow hover:bg-red-700 transition"
-    >
-      Delete
-    </button>
-  </div>
-</div>
+                    <button
+                      onClick={() => handleDelete(event.id)}
+                      className="rounded-2xl bg-red-600 px-5 py-2 text-white font-semibold shadow hover:bg-red-700 transition"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -349,19 +364,6 @@ export default function AdminEvents() {
     </div>
   );
 }
-
-function buildEventPayload(form) {
-  return {
-    ...form,
-    imageUrl: form.imageUrl,
-    url: form.imageUrl,
-  };
-}
-
-function getEventImageUrl(event) {
-  return event.imageUrl || event.url || "/event1.png";
-}
-
 
 function formatTime(time) {
   if (!time) return "No time";

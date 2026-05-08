@@ -10,6 +10,8 @@ import Contact from "./pages/Contact.jsx";
 import Events from "./pages/Events.jsx";
 import AdminEvents from "./pages/AdminEvents.jsx";
 import AdminLogin from "./pages/AdminLogin.jsx";
+import EventHistory from "./pages/EventHistory.jsx";
+import AdminEventHistory from "./pages/AdminEventHistory.jsx";
 
 const router = createBrowserRouter([
   {
@@ -22,6 +24,8 @@ const router = createBrowserRouter([
       { path: "events", element: <Events /> },
       { path: "admin/login", element: <AdminLogin /> },
       { path: "admin/events", element: <AdminEvents /> },
+      { path: "events/history", element: <EventHistory /> },
+      { path: "admin/event-history", element: <AdminEventHistory /> },
     ],
   },
 ]);
