@@ -1,6 +1,7 @@
 //const API = "http://localhost:8080/api/event-history";
 // production later:
- const API = "https://dnd-cafe-ece43a569fa1.herokuapp.com/api/event-history";
+ 
+const API = "https://dnd-cafe-ece43a569fa1.herokuapp.com/api/event-history";
 
 export const getEventHistory = async () => {
   const res = await fetch(API);
