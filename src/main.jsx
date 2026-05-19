@@ -12,6 +12,8 @@ import AdminEvents from "./pages/AdminEvents.jsx";
 import AdminLogin from "./pages/AdminLogin.jsx";
 import EventHistory from "./pages/EventHistory.jsx";
 import AdminEventHistory from "./pages/AdminEventHistory.jsx";
+import LivePage from "./pages/LivePage";
+
 
 const router = createBrowserRouter([
   {
@@ -25,7 +27,8 @@ const router = createBrowserRouter([
       { path: "admin/login", element: <AdminLogin /> },
       { path: "admin/events", element: <AdminEvents /> },
       { path: "events/history", element: <EventHistory /> },
-      { path: "admin/event-history", element: <AdminEventHistory /> },
+       { path: "admin/event-history", element: <AdminEventHistory /> },
+        { path: "live", element: <LivePage /> },
     ],
   },
 ]);
