@@ -6,6 +6,7 @@ export default function LivePage() {
         <h1 className="mb-6 text-center text-5xl font-bold text-white">
           🔴 D&D Café Live
         </h1>
+        
 
         <iframe
           className="w-full h-[700px] rounded-3xl"
