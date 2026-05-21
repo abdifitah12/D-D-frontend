@@ -133,13 +133,13 @@ export default function Home() {
   <h2 className="font-display text-3xl text-center">Visit Our Café</h2>
 
   <p className="mt-2 text-slate-600 text-center">
-    Find your nearest D&amp;D Café for dine-in or take-out orders.
+    Find your nearest DND Café for dine-in or take-out orders.
   </p>
 
   <div className="mt-8 grid gap-8 md:grid-cols-2 items-center">
     {/* LEFT: Address info */}
     <div className="space-y-3 text-center md:text-left">
-      <h3 className="text-center font-semibold">D&amp;D Café</h3>
+      <h3 className="text-center font-semibold">DND Café</h3>
 
       <p className="text-slate-600">
         📍 2102 Kipling Ave, Etobicoke, ON M9W 4K5, Canada
@@ -168,7 +168,7 @@ export default function Home() {
   id="about"
   className="scroll-mt-24 rounded-3xl border bg-white p-8 md:p-12 text-center"
 >
-  <h2 className="font-display text-3xl">About D&amp;D Café</h2>
+  <h2 className="font-display text-3xl">About DND Café</h2>
 
   <p className="mt-3 max-w-2xl mx-auto text-slate-600">
     Handcrafted desserts and freshly brewed coffee made with love and local
@@ -191,7 +191,7 @@ export default function Home() {
 >
   {/* TITLE */}
   <div>
-    <h2 className="font-display text-3xl">Contact D&amp;D Café</h2>
+    <h2 className="font-display text-3xl">Contact DND Café</h2>
     <p className="mt-2 text-slate-600">
       Visit us, call us, or connect with us on social media.
     </p>
@@ -261,39 +261,39 @@ export default function Home() {
   <div className="mx-auto max-w-md text-slate-700 space-y-2">
   <h3 className="font-semibold text-lg mt-4">Opening Hours</h3>
 
-  <div className="flex justify-between border-b pb-1">
+  <div className="flex justify-between border-b pb-1 font-semibold">
     <span>Monday</span>
-    <span>4 PM – 10 PM</span>
+    <span>5 PM – 12 AM</span>
   </div>
 
-  <div className="flex justify-between border-b pb-1">
+  <div className="flex justify-between border-b pb-1 font-semibold">
     <span>Tuesday</span>
-    <span>4 PM – 10 PM</span>
+    <span>5 PM – 12 AM</span>
   </div>
 
-  <div className="flex justify-between border-b pb-1">
+  <div className="flex justify-between border-b pb-1 font-semibold">
     <span>Wednesday</span>
-    <span>4 PM – 10 PM</span>
+    <span>5 PM – 12 AM</span>
   </div>
 
-  <div className="flex justify-between border-b pb-1">
+  <div className="flex justify-between border-b pb-1 font-semibold">
     <span>Thursday</span>
-    <span>4 PM – 10 PM</span>
+    <span>5 PM – 12 AM</span>
   </div>
 
   <div className="flex justify-between border-b pb-1 font-semibold">
     <span>Friday</span>
-    <span>4 PM – 12 AM</span>
+    <span>5 PM – 1:30 AM</span>
   </div>
 
   <div className="flex justify-between border-b pb-1 font-semibold">
     <span>Saturday</span>
-    <span>4 PM – 12 AM</span>
+    <span>5 PM – 1:30 AM</span>
   </div>
 
-  <div className="flex justify-between">
+   <div className="flex justify-between border-b pb-1 font-semibold">
     <span>Sunday</span>
-    <span>4 PM – 8 PM</span>
+    <span>5 PM – 12 AM</span>
   </div>
 </div>
 

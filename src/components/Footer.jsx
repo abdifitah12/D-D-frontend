@@ -7,7 +7,7 @@ export default function Footer() {
 
         {/* BRAND */}
         <div>
-          <h3 className="font-display text-xl font-semibold">D&amp;D Café</h3>
+          <h3 className="font-display text-xl font-semibold">DND Café</h3>
           <p className="mt-2 text-sm text-slate-600 leading-relaxed">
             Coffee • Cakes • Pastries.  
             Freshly made with love every day.
@@ -99,7 +99,7 @@ export default function Footer() {
 
       {/* COPYRIGHT */}
       <div className="border-t text-center py-4 text-xs text-slate-500">
-        © {new Date().getFullYear()} D&amp;D Café · All rights reserved
+        © {new Date().getFullYear()} DND Café · All rights reserved
       </div>
     </footer>
   );
