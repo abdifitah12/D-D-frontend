@@ -1,6 +1,7 @@
 //const API = "http://localhost:8080/api/events";
 const API = "https://dnd-cafe-ece43a569fa1.herokuapp.com/api/events";
 
+
 const authHeader = (username, password) => ({
   Authorization: `Basic ${btoa(`${username}:${password}`)}`,
 });
