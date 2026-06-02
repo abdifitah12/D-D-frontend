@@ -6,6 +6,7 @@ const authHeader = (username, password) => ({
   Authorization: `Basic ${btoa(`${username}:${password}`)}`,
 });
 
+
 export const getEvents = async (username, password) => {
   const headers =
     username && password ? { ...authHeader(username, password) } : undefined;
