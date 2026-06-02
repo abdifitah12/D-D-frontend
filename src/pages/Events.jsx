@@ -71,9 +71,13 @@ export default function Events() {
 
                 <p className="mt-3 text-gray-600">{e.description}</p>
 
-                <div className="mt-4 space-y-2 text-sm text-gray-500">
+                 <div className="mt-4 space-y-2 text-sm text-gray-500">
                   <p>📅 {e.date}</p>
-                  <p>⏰ {formatTime(e.time)}</p>
+
+                  <p>
+                    ⏰ {formatTime(e.startTime)} - {formatTime(e.endTime)}
+                  </p>
+
                   <p className="text-green-600 font-semibold">
                     📍 {e.location}
                   </p>
