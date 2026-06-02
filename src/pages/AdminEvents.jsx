@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import {
-  getEvents,
-  createEvent,
-  updateEvent,
-  deleteEvent,
-} from "../api/events";
+import { getEvents, createEvent, updateEvent, deleteEvent } from "../api/events";
 import { createEventHistory } from "../api/eventHistory";
 import {
   clearAdminAuth,
@@ -19,7 +14,8 @@ const emptyForm = {
   description: "",
   location: "",
   date: "",
-  time: "",
+  startTime: "",
+  endTime: "",
 };
 
 export default function AdminEvents() {
@@ -123,7 +119,8 @@ export default function AdminEvents() {
       description: event.description || "",
       location: event.location || "",
       date: event.date || "",
-      time: event.time || "",
+      startTime: event.startTime || "",
+      endTime: event.endTime || "",
     });
     setSelectedFileName("");
     setImageFile(null);
@@ -229,8 +226,17 @@ export default function AdminEvents() {
 
               <input
                 type="time"
-                name="time"
-                value={form.time}
+                name="startTime"
+                value={form.startTime}
+                onChange={handleChange}
+                className="rounded-2xl border px-4 py-3"
+                required
+              />
+
+              <input
+                type="time"
+                name="endTime"
+                value={form.endTime}
                 onChange={handleChange}
                 className="rounded-2xl border px-4 py-3"
                 required
@@ -308,7 +314,9 @@ export default function AdminEvents() {
                     src={event.imageUrl || "/event.jpg"}
                     alt={event.title}
                     className="w-full h-full object-cover"
-                    onError={(x) => (x.currentTarget.src = "/event.jpg")}
+                    onError={(e) => {
+                      e.currentTarget.src = "/event.jpg";
+                    }}
                   />
                 </div>
 
@@ -324,9 +332,7 @@ export default function AdminEvents() {
                   <div className="mt-5 space-y-2 text-sm md:text-base text-slate-700">
                     <div className="flex items-center gap-2">
                       <span>📍</span>
-                      <span className="font-semibold text-green-700">
-                        {event.location || "No location"}
-                      </span>
+                      <span>{event.location || "No location"}</span>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -336,21 +342,19 @@ export default function AdminEvents() {
 
                     <div className="flex items-center gap-2">
                       <span>⏰</span>
-                      <span>{formatTime(event.time)}</span>
+                      <span>
+                        {formatTime(event.startTime)} -{" "}
+                        {formatTime(event.endTime)}
+                      </span>
                     </div>
                   </div>
 
                   <div className="mt-6 flex gap-3">
-                    <button
-                      onClick={() => handleEdit(event)}
-                      className="rounded-2xl bg-amber-500 px-5 py-2 text-white font-semibold shadow hover:bg-amber-600 transition"
-                    >
-                      Edit
-                    </button>
+                   
 
                     <button
                       onClick={() => handleDelete(event.id)}
-                      className="rounded-2xl bg-red-600 px-5 py-2 text-white font-semibold shadow hover:bg-red-700 transition"
+                      className="rounded-2xl bg-red-600 px-5 py-2 text-white font-semibold"
                     >
                       Delete
                     </button>

@@ -15,14 +15,21 @@ export const getEvents = async (username, password) => {
   return res.json();
 };
 
-export const createEvent = async (event, imageFile, username, password) => {
+ export const createEvent = async (
+  event,
+  imageFile,
+  username,
+  password
+) => {
   const formData = new FormData();
 
   formData.append("title", event.title);
   formData.append("description", event.description);
   formData.append("location", event.location);
   formData.append("date", event.date);
-  formData.append("time", event.time);
+
+  formData.append("startTime", event.startTime);
+  formData.append("endTime", event.endTime);
 
   if (imageFile) {
     formData.append("image", imageFile);
@@ -36,7 +43,10 @@ export const createEvent = async (event, imageFile, username, password) => {
     body: formData,
   });
 
-  if (!res.ok) throw new Error("Failed to create event");
+  if (!res.ok) {
+    throw new Error("Failed to create event");
+  }
+
   return res.json();
 };
 
