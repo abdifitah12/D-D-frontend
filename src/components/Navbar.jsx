@@ -77,7 +77,7 @@ export default function Navbar() {
             onClick={() => goTo("home")}
             className="inline-block font-display text-lg font-semibold tracking-wide text-slate-800"
           >
-            D&amp;D Café
+            DND Café
           </Link>
         </div>
 
