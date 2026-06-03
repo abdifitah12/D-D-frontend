@@ -91,7 +91,7 @@ export default function AdminEventHistory() {
           </h1>
 
           <p className="mt-2 text-slate-600">
-            Add photos or videos from past D&amp;D Café events.
+            Add photos or videos from past DND Café events.
           </p>
 
           {message && (
@@ -167,12 +167,12 @@ export default function AdminEventHistory() {
               key={item.id}
               className="overflow-hidden rounded-3xl border bg-white shadow-lg"
             >
-              <div className="h-72 bg-slate-100">
+                <div className="h-[650px] bg-black">
                 {item.mediaType === "video" ? (
-                  <video
+                   <video
                     src={item.mediaUrl}
                     controls
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-contain bg-black rounded-t-3xl"
                   />
                 ) : (
                   <img
@@ -192,12 +192,7 @@ export default function AdminEventHistory() {
                   {item.description}
                 </p>
 
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="mt-5 rounded-2xl bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700"
-                >
-                  Delete
-                </button>
+                
               </div>
             </div>
           ))}
