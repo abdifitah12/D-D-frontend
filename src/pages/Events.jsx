@@ -23,9 +23,18 @@ export default function Events() {
         
         {/* HEADER */}
         <div className="text-center mb-8">
+           <div className="flex items-center justify-center gap-6 mb-10">
           <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900">
             Events
           </h1>
+
+          <a
+            href="/events/history"
+            className="rounded-full border border-green-700 px-6 py-3 font-semibold text-green-700 transition hover:bg-green-700 hover:text-white"
+          >
+            View Event History
+          </a>
+        </div>
 
           <p className="mt-3 text-slate-600 text-base md:text-lg">
             Join us for amazing experiences at DND Café
@@ -121,14 +130,7 @@ export default function Events() {
         </div>
 
         {/* HISTORY BUTTON */}
-        <div className="mt-10 text-center">
-          <a
-            href="/events/history"
-            className="inline-flex rounded-full border border-green-700 px-6 py-3 font-semibold text-green-700 transition hover:bg-green-700 hover:text-white"
-          >
-            View Event History
-          </a>
-        </div>
+         
       </div>
     </section>
   );
