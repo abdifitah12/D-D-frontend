@@ -40,7 +40,7 @@ export default function Contact() {
 >
   {/* TITLE */}
   <div>
-    <h2 className="font-display text-3xl">Contact D&amp;D Café</h2>
+    <h2 className="font-display text-3xl">Contact DND Café</h2>
     <p className="mt-2 text-slate-600">
       Visit us, call us, or connect with us on social media.
     </p>
@@ -48,7 +48,7 @@ export default function Contact() {
 
   {/* CONTACT INFO */}
   <div className="space-y-2 text-slate-700">
-    <p>📞 <strong>Phone:</strong> +1 (816) 602-7654</p>
+    <p>📞 <strong>Phone:</strong> +1 (416) 688-1450</p>
     <p>📍 <strong>Address:</strong> 2102 Kipling Ave, Etobicoke, ON M9W 4K5</p>
     <p>✉️ <strong>Email:</strong> hello@dndcafe.com</p>
   </div>
@@ -96,7 +96,7 @@ export default function Contact() {
     </a>
 
     <a
-      href="https://wa.me/18166027654"
+      href="https://wa.me/4166881450"
       target="_blank"
       rel="noreferrer"
       className="p-2 rounded-full hover:bg-slate-100 text-green-600"
