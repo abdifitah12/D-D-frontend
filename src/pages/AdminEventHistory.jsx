@@ -161,60 +161,61 @@ export default function AdminEventHistory() {
         </div>
 
         {/* LIST */}
-        <div className="grid gap-6 md:grid-cols-2">
-           <div className="grid gap-10 lg:grid-cols-2">
+         {/* LIST */}
+<div className="grid gap-8 md:grid-cols-2">
   {[...history]
     .sort((a, b) => b.id - a.id)
     .map((item) => (
       <div
         key={item.id}
-        className="overflow-hidden rounded-[32px] bg-white shadow-xl transition duration-300 hover:-translate-y-2 hover:shadow-2xl"
+        className="overflow-hidden rounded-[32px] bg-white shadow-xl transition duration-300 hover:-translate-y-1 hover:shadow-2xl"
       >
-               <div className="relative h-[650px] bg-black">
-
-  <button
-    onClick={() => handleDelete(item.id)}
-    className="absolute right-4 top-4 z-20 rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:bg-red-700"
-  >
-    🗑 Delete
-  </button>
-
-  {item.mediaType === "video" ? (
-    <video
-      src={item.mediaUrl}
-      controls
-      className="h-full w-full object-contain bg-black rounded-t-3xl"
-    />
-  ) : (
-    <img
-      src={item.mediaUrl || "/event.jpg"}
-      alt={item.title}
-      className="h-full w-full object-cover"
-    />
-  )}
-</div>
-
-               <div className="p-6">
-              <h2 className="text-2xl font-bold text-slate-900">
-                {item.title}
-              </h2>
-
-              <p className="mt-2 text-slate-600">
-                {item.description}
-              </p>
-
-              <div className="mt-5 flex justify-end">
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="rounded-full bg-red-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
-                >
-                  🗑 Delete
-                </button>
-              </div>
-            </div>
-            </div>
-          ))}
+        {/* MEDIA */}
+        <div className="relative h-[650px] bg-black">
+          {item.mediaType === "video" ? (
+            <video
+              src={item.mediaUrl}
+              controls
+              className="h-full w-full rounded-t-3xl bg-black object-contain"
+            />
+          ) : (
+            <img
+              src={item.mediaUrl || "/event.jpg"}
+              alt={item.title}
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = "/event.jpg";
+              }}
+            />
+          )}
         </div>
+
+        {/* CONTENT */}
+        <div className="p-6">
+          <div className="mb-3 inline-block rounded-full bg-green-100 px-4 py-1 text-sm font-semibold text-green-700">
+            {item.mediaType === "video" ? "Event Video" : "Event Photo"}
+          </div>
+
+          <h2 className="text-2xl font-bold text-slate-900">
+            {item.title}
+          </h2>
+
+          <p className="mt-3 leading-7 text-slate-600">
+            {item.description}
+          </p>
+
+          {/* DELETE THIS INDIVIDUAL ITEM */}
+          <button
+            type="button"
+            onClick={() => handleDelete(item.id)}
+            className="mt-6 rounded-full bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700"
+          >
+            🗑 Delete
+          </button>
+        </div>
+      </div>
+    ))}
+</div>
       </div>
     </section>
   );
