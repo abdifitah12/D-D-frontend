@@ -162,11 +162,14 @@ export default function AdminEventHistory() {
 
         {/* LIST */}
         <div className="grid gap-6 md:grid-cols-2">
-          {history.map((item) => (
-            <div
-              key={item.id}
-              className="overflow-hidden rounded-3xl border bg-white shadow-lg"
-            >
+           <div className="grid gap-10 lg:grid-cols-2">
+  {[...history]
+    .sort((a, b) => b.id - a.id)
+    .map((item) => (
+      <div
+        key={item.id}
+        className="overflow-hidden rounded-[32px] bg-white shadow-xl transition duration-300 hover:-translate-y-2 hover:shadow-2xl"
+      >
                <div className="relative h-[650px] bg-black">
 
   <button
