@@ -167,21 +167,29 @@ export default function AdminEventHistory() {
               key={item.id}
               className="overflow-hidden rounded-3xl border bg-white shadow-lg"
             >
-                <div className="h-[650px] bg-black">
-                {item.mediaType === "video" ? (
-                   <video
-                    src={item.mediaUrl}
-                    controls
-                    className="h-full w-full object-contain bg-black rounded-t-3xl"
-                  />
-                ) : (
-                  <img
-                    src={item.mediaUrl || "/event.jpg"}
-                    alt={item.title}
-                    className="h-full w-full object-cover"
-                  />
-                )}
-              </div>
+               <div className="relative h-[650px] bg-black">
+
+  <button
+    onClick={() => handleDelete(item.id)}
+    className="absolute right-4 top-4 z-20 rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:bg-red-700"
+  >
+    🗑 Delete
+  </button>
+
+  {item.mediaType === "video" ? (
+    <video
+      src={item.mediaUrl}
+      controls
+      className="h-full w-full object-contain bg-black rounded-t-3xl"
+    />
+  ) : (
+    <img
+      src={item.mediaUrl || "/event.jpg"}
+      alt={item.title}
+      className="h-full w-full object-cover"
+    />
+  )}
+</div>
 
                <div className="p-6">
               <h2 className="text-2xl font-bold text-slate-900">

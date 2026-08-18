@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 
-import { getEventHistory } from "../api/eventHistory";
+import {
+  getEventHistory,
+  deleteEventHistory,
+} from "../api/eventHistory";
 export default function EventHistory() {
   const [history, setHistory] = useState([]);
 
@@ -117,10 +120,16 @@ export default function EventHistory() {
               <h2 className="text-3xl font-bold text-slate-900">
                 {item.title}
               </h2>
+             <p className="mt-4 text-lg leading-8 text-slate-600">
+            {item.description}
+          </p>
 
-              <p className="mt-4 text-lg leading-8 text-slate-600">
-                {item.description}
-              </p>
+          <button
+            onClick={() => handleDelete(item.id)}
+            className="mt-6 rounded-full bg-red-600 px-6 py-3 font-semibold text-white shadow-md transition hover:bg-red-700"
+          >
+            🗑 Delete
+        </button>
 
             </div>
           </div>
