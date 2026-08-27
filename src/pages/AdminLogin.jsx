@@ -17,7 +17,7 @@ export default function AdminLogin() {
 
     try {
       const res = await fetch(
-        "http://localhost:8080/api/auth/login",
+        "https://dnd-cafe-ece43a569fa1.herokuapp.com/api/auth/login",
         {
           method: "POST",
           headers: {
