@@ -12,8 +12,8 @@ import AdminEvents from "./pages/AdminEvents.jsx";
 import AdminLogin from "./pages/AdminLogin.jsx";
 import EventHistory from "./pages/EventHistory.jsx";
 import AdminEventHistory from "./pages/AdminEventHistory.jsx";
-import LivePage from "./pages/LivePage";
-
+import LivePage from "./pages/LivePage.jsx";
+import ProtectedRoute from "./pages/ProtectedRoute.jsx";
 
 const router = createBrowserRouter([
   {
@@ -21,14 +21,42 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
       { index: true, element: <Home /> },
+
       { path: "products", element: <Products /> },
+
       { path: "contact", element: <Contact /> },
+
       { path: "events", element: <Events /> },
-      { path: "admin/login", element: <AdminLogin /> },
-      { path: "admin/events", element: <AdminEvents /> },
+
       { path: "events/history", element: <EventHistory /> },
-       { path: "admin/event-history", element: <AdminEventHistory /> },
-        { path: "live", element: <LivePage /> },
+
+      { path: "live", element: <LivePage /> },
+
+      // PUBLIC ADMIN LOGIN
+      {
+        path: "admin/login",
+        element: <AdminLogin />,
+      },
+
+      // PROTECTED ADMIN EVENTS
+      {
+        path: "admin/events",
+        element: (
+          <ProtectedRoute>
+            <AdminEvents />
+          </ProtectedRoute>
+        ),
+      },
+
+      // PROTECTED ADMIN EVENT HISTORY
+      {
+        path: "admin/event-history",
+        element: (
+          <ProtectedRoute>
+            <AdminEventHistory />
+          </ProtectedRoute>
+        ),
+      },
     ],
   },
 ]);

@@ -1,33 +1,62 @@
+import {
+  getAdminToken,
+  clearAdminAuth,
+} from "../utils/adminAuth";
+
+// LOCAL
 //const API = "http://localhost:8080/api/events";
-const API = "https://dnd-cafe-ece43a569fa1.herokuapp.com/api/events";
 
+// PRODUCTION LATER
+ const API = "https://dnd-cafe-ece43a569fa1.herokuapp.com/api/events";
 
-const authHeader = (username, password) => ({
-  Authorization: `Basic ${btoa(`${username}:${password}`)}`,
-});
+const handleUnauthorized = () => {
+  clearAdminAuth();
+  window.location.replace("/admin/login");
+};
 
-export const getEvents = async (username, password) => {
-  const headers =
-    username && password ? { ...authHeader(username, password) } : undefined;
+// ===============================
+// PUBLIC - GET ALL EVENTS
+// ===============================
+export const getEvents = async () => {
+  const res = await fetch(API);
 
-  const res = await fetch(API, { headers });
-  if (!res.ok) throw new Error("Failed to fetch events");
+  if (!res.ok) {
+    throw new Error("Failed to load events");
+  }
+
   return res.json();
 };
 
- export const createEvent = async (
-  event,
-  imageFile,
-  username,
-  password
-) => {
+// ===============================
+// PUBLIC - GET ONE EVENT
+// ===============================
+export const getEventById = async (id) => {
+  const res = await fetch(`${API}/${id}`);
+
+  if (!res.ok) {
+    throw new Error("Failed to load event");
+  }
+
+  return res.json();
+};
+
+// ===============================
+// ADMIN - CREATE EVENT
+// ===============================
+export const createEvent = async (event, imageFile) => {
+  const token = getAdminToken();
+
+  if (!token) {
+    handleUnauthorized();
+    throw new Error("Please login");
+  }
+
   const formData = new FormData();
 
   formData.append("title", event.title);
   formData.append("description", event.description);
   formData.append("location", event.location);
   formData.append("date", event.date);
-
   formData.append("startTime", event.startTime);
   formData.append("endTime", event.endTime);
 
@@ -37,11 +66,18 @@ export const getEvents = async (username, password) => {
 
   const res = await fetch(API, {
     method: "POST",
+
     headers: {
-      ...authHeader(username, password),
+      Authorization: `Bearer ${token}`,
     },
+
     body: formData,
   });
+
+  if (res.status === 401 || res.status === 403) {
+    handleUnauthorized();
+    throw new Error("Login expired. Please login again.");
+  }
 
   if (!res.ok) {
     throw new Error("Failed to create event");
@@ -50,27 +86,72 @@ export const getEvents = async (username, password) => {
   return res.json();
 };
 
-export const updateEvent = async (id, event, username, password) => {
+// ===============================
+// ADMIN - UPDATE EVENT
+// ===============================
+export const updateEvent = async (id, event) => {
+  const token = getAdminToken();
+
+  if (!token) {
+    handleUnauthorized();
+    throw new Error("Please login");
+  }
+
   const res = await fetch(`${API}/${id}`, {
     method: "PUT",
+
     headers: {
       "Content-Type": "application/json",
-      ...authHeader(username, password),
+      Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(event),
+
+    body: JSON.stringify({
+      title: event.title,
+      description: event.description,
+      location: event.location,
+      date: event.date,
+      startTime: event.startTime,
+      endTime: event.endTime,
+    }),
   });
 
-  if (!res.ok) throw new Error("Failed to update event");
+  if (res.status === 401 || res.status === 403) {
+    handleUnauthorized();
+    throw new Error("Login expired. Please login again.");
+  }
+
+  if (!res.ok) {
+    throw new Error("Failed to update event");
+  }
+
   return res.json();
 };
 
-export const deleteEvent = async (id, username, password) => {
+// ===============================
+// ADMIN - DELETE EVENT
+// ===============================
+export const deleteEvent = async (id) => {
+  const token = getAdminToken();
+
+  if (!token) {
+    handleUnauthorized();
+    throw new Error("Please login");
+  }
+
   const res = await fetch(`${API}/${id}`, {
     method: "DELETE",
+
     headers: {
-      ...authHeader(username, password),
+      Authorization: `Bearer ${token}`,
     },
   });
 
-  if (!res.ok) throw new Error("Failed to delete event");
+  if (res.status === 401 || res.status === 403) {
+    handleUnauthorized();
+    throw new Error("Login expired. Please login again.");
+  }
+
+  if (!res.ok) {
+    throw new Error("Failed to delete event");
+  }
 };
