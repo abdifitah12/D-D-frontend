@@ -34,7 +34,7 @@ export const products: Product[] = [
   { id: 15, name: "Milk Cake",                 price: 7,    tag: "Frosted by Maida (Desserts)", description: "Soft, milk-soaked sponge cake in two indulgent flavours.", variations: ["Oreo", "Biscoff"] },
   { id: 16, name: "Croissant",                 price: 4.75, tag: "Frosted by Maida (Desserts)", description: "Flaky, buttery croissants baked golden.", variations: ["Biscoff", "Double Baked Almond", "Double Baked Pistachio", "Butter"] },
   { id: 17, name: "Cookies",                   price: 3.50, tag: "Frosted by Maida (Desserts)", description: "Freshly baked cookies in a range of flavours.", variations: ["Chocolate Chip", "Red Velvet", "Smores", "Oreo", "Double Chocolate"] },
-  { id: 18, name: "Fresh Brownies",            price: 3.50, tag: "Frosted by Maida (Desserts)", description: "Rich, fudgy brownies baked fresh with a crackly top." },
+  
 
   // ── Malawaax / Somali Crêpe ──
   { id: 19, name: "Malawaax / Somali Crêpe",   price: 2.50, tag: "Malawaax / Somali Crêpe",    description: "A traditional Somali crêpe — thin, lightly crisp, and warmly satisfying. Ask our team about today's fillings and accompaniments." },
