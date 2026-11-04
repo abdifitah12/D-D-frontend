@@ -1,0 +1,60 @@
+const events = [
+  {
+    id: 232,
+    title: "Baati Party Somali",
+    description: "Baati Party\nSomali Culture Night: Baati Party",
+    mediaUrl: "https://res.cloudinary.com/dfqmcpdby/video/upload/v1792092932/event-history/obdzsytqbgyx6gjea8a8.mp4",
+    mediaType: "video",
+    createdAt: "2026-10-15T19:35:33.755795",
+  },
+  {
+    id: 206,
+    title: "Somali Youth League (SYL) – Our History & Legacy",
+    description: "A look back at the history and legacy of the Somali Youth League (SYL), highlighting its role in Somalia’s journey toward independence, unity, and freedom. Honoring the leaders and young people whose courage and dedication helped shape Somalia’s future.",
+    mediaUrl: "https://res.cloudinary.com/dfqmcpdby/video/upload/v1787948012/event-history/jpza1tmcladue1luto4a.mp4",
+    mediaType: "video",
+    createdAt: "2026-08-28T20:13:33.325088",
+  },
+  {
+    id: 205,
+    title: "Welcome to DND Café",
+    description: "Welcome to DND Café! We’re excited to share special moments from our events with you. Explore photos and videos from our past events, celebrations, and community gatherings.",
+    mediaUrl: "https://res.cloudinary.com/dfqmcpdby/video/upload/v1787945708/event-history/pewedsxva3sg3wfwq0hp.mp4",
+    mediaType: "video",
+    createdAt: "2026-08-28T19:35:09.66478",
+  },
+  {
+    id: 203,
+    title: "girls w aux: LAUNCH DAY RECAP",
+    description: "Thank you to everyone who came out to support and made it a successful launch!",
+    mediaUrl: "https://res.cloudinary.com/dfqmcpdby/video/upload/v1787945316/event-history/f0r84qryym8u8kugdlba.mp4",
+    mediaType: "video",
+    createdAt: "2026-08-28T19:28:37.13444",
+  },
+  {
+    id: 202,
+    title: "Baati Party",
+    description: "Somali Culture Night: Baati Party",
+    mediaUrl: "https://res.cloudinary.com/dfqmcpdby/video/upload/v1787866502/event-history/lpmag3jv6jcwvljkex58.mp4",
+    mediaType: "video",
+    createdAt: "2026-08-27T21:35:03.901163",
+  },
+  {
+    id: 201,
+    title: "Baati Party",
+    description: "Somali Culture Night: Baati Party",
+    mediaUrl: "https://res.cloudinary.com/dfqmcpdby/video/upload/v1787865734/event-history/dbbiagdx76sufw6vqppa.mp4",
+    mediaType: "video",
+    createdAt: "2026-08-27T21:22:15.835671",
+  },
+  {
+    id: 200,
+    title: "David McGuinty",
+    description: "The current Minister of National Defence of Canada is David McGuinty",
+    mediaUrl: "https://res.cloudinary.com/dfqmcpdby/video/upload/v1787865089/event-history/cvqfwbqtzobjbwr0bz5c.mp4",
+    mediaType: "video",
+    createdAt: "2026-08-27T21:11:30.287632",
+  },
+];
+
+export default events;
