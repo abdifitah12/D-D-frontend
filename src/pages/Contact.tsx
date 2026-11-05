@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import ScrollReveal from "@/components/ScrollReveal";
 import contactHeroImg from "@/assets/contact-hero.png";
+import { sendContactInquiry } from "@/api/contact";
 
 const formSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(100, "Name is too long"),
@@ -23,14 +24,18 @@ export default function Contact() {
     defaultValues: { name: "", email: "", date: "", guests: "", message: "" },
   });
 
-  function onSubmit(data: FormValues) {
-    const subject = encodeURIComponent(`Catering / Events Inquiry from ${data.name}`);
-    const body = encodeURIComponent(
-      `Hi DnD Cafe,\n\nMy name is ${data.name} and I'd like to inquire about catering or events.\n\nReply to: ${data.email}\nEvent Date: ${data.date || "TBD"}\nGuest Count: ${data.guests || "TBD"}\n\nMessage:\n${data.message}`
-    );
-    window.open(`mailto:${CAFE_EMAIL}?subject=${subject}&body=${body}`, "_blank");
-    toast.success("Your email client has opened with the inquiry prefilled.");
-    form.reset();
+  async function onSubmit(data: FormValues) {
+    try {
+      await sendContactInquiry(data);
+      toast.success("Your enquiry was sent to DnD Cafe.");
+      form.reset();
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to send your enquiry. Please try again.",
+      );
+    }
   }
 
   return (
@@ -106,10 +111,10 @@ export default function Contact() {
               <div className="bg-white rounded-2xl border border-border p-8 md:p-12 shadow-sm">
                 <h2 className="font-serif text-3xl text-primary mb-2">Catering & Events</h2>
                 <p className="text-muted-foreground mb-8">
-                  Fill out the form below and we'll open your email client with a prefilled message ready to send to our team.
+                  Fill out the form below and your enquiry will be sent directly to our team.
                 </p>
                 <p className="text-sm text-muted-foreground mb-8 rounded-lg bg-secondary/50 px-4 py-3">
-                  Your details stay in your browser until you choose to send the generated email. Please do not include payment details or other sensitive information.
+                  Your enquiry is sent using our email service. Please do not include payment details or other sensitive information.
                 </p>
                 
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -144,8 +149,8 @@ export default function Contact() {
                     {form.formState.errors.message && <p className="text-red-500 text-xs">{form.formState.errors.message.message}</p>}
                   </div>
 
-                  <button type="submit" className="w-full bg-primary text-primary-foreground py-4 rounded-full font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2">
-                    Send Enquiry <i className="fa-solid fa-envelope text-base" />
+                  <button type="submit" disabled={form.formState.isSubmitting} className="w-full bg-primary text-primary-foreground py-4 rounded-full font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60">
+                    {form.formState.isSubmitting ? "Sending..." : "Send Enquiry"} <i className="fa-solid fa-envelope text-base" />
                   </button>
                 </form>
               </div>

@@ -10,6 +10,8 @@ import FAQ from "@/pages/FAQ";
 import Story from "@/pages/Story";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
+import AdminLogin from "@/pages/AdminLogin";
+import AdminEvents from "@/pages/AdminEvents";
 import IntroSplash from "@/components/IntroSplash";
 import { Toaster } from "sonner";
 
@@ -39,6 +41,8 @@ function Router() {
           <Route path="/story" component={Story} />
           <Route path="/contact" component={Contact} />
           <Route path="/events" component={Events} />
+          <Route path="/admin/login" component={AdminLogin} />
+          <Route path="/admin/events" component={AdminEvents} />
           <Route path="/faq" component={FAQ} />
           <Route path="/chat" component={FAQ} />
           <Route path="/privacy" component={Privacy} />
