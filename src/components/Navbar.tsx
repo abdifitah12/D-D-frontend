@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
+import { useCustomerSession, signOutCustomer, verifyCustomerSession } from "@/api/customerAuth";
 import wordmark from "@/assets/dnd-cafe-wordmark.png";
 
 const navLinks = [
@@ -10,9 +11,24 @@ const navLinks = [
   { label: "Contact", href: "/contact" },
   { label: "Events", href: "/events" },
   { label: "FAQs", href: "/faq" },
+  { label: "Go Live", href: "/chat" },
 ];
 
 export default function Navbar() {
+  const customerSession = useCustomerSession();
+  const customerToken = customerSession?.token;
+  useEffect(() => {
+    if (!customerToken) return;
+    const controller = new AbortController();
+    void verifyCustomerSession(customerToken, controller.signal);
+    return () => controller.abort();
+  }, [customerToken]);
+
+  function handleSignOut() {
+    signOutCustomer();
+    setOpen(false);
+    setLocation("/signin");
+  }
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [location, setLocation] = useLocation();
@@ -65,6 +81,17 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-4">
+            {customerSession ? <div className="hidden items-center gap-3 md:flex">
+              <span className="max-w-28 truncate text-sm text-primary" title={customerSession.customer.username}>{customerSession.customer.username}</span>
+              <button type="button" onClick={handleSignOut} className="rounded-full border border-border px-5 py-2 text-sm text-primary hover:border-accent">Sign out</button>
+            </div> : (
+            <Link
+              href="/login"
+              className="hidden rounded-full border border-border px-5 py-2 text-sm font-medium text-primary transition-colors hover:border-accent hover:text-accent md:inline-flex"
+            >
+              Sign in
+            </Link>
+            )}
             <button
               onClick={() => setOpen((v) => !v)}
               className="md:hidden w-10 h-10 flex items-center justify-center rounded-full hover:bg-secondary transition-colors"
@@ -118,6 +145,17 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
+              {customerSession ? <div className="space-y-2 px-4 py-4">
+                <p className="break-all text-sm text-muted-foreground">Signed in as {customerSession.customer.username}</p>
+                <button type="button" onClick={handleSignOut} className="text-lg text-primary">Sign out</button>
+              </div> : (
+              <Link
+                href="/login"
+                className="px-4 py-4 rounded-xl text-lg font-serif text-foreground transition-colors hover:bg-secondary/50"
+              >
+                Sign in / Register
+              </Link>
+              )}
             </div>
             <div className="p-6 border-t border-border/50 space-y-4 bg-secondary/20">
               <a href="mailto:dndcafe.to@gmail.com"

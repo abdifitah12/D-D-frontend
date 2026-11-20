@@ -12,6 +12,9 @@ import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminEvents from "@/pages/AdminEvents";
+import CustomerAuth from "@/pages/CustomerAuth";
+import LiveChat from "@/pages/LiveChat";
+import SupportChat from "@/pages/SupportChat";
 import IntroSplash from "@/components/IntroSplash";
 import { Toaster } from "sonner";
 
@@ -43,8 +46,12 @@ function Router() {
           <Route path="/events" component={Events} />
           <Route path="/admin/login" component={AdminLogin} />
           <Route path="/admin/events" component={AdminEvents} />
+          <Route path="/login" component={CustomerAuth} />
+          <Route path="/signin" component={CustomerAuth} />
+          <Route path="/register" component={CustomerAuth} />
+          <Route path="/chat" component={LiveChat} />
+          <Route path="/messages" component={SupportChat} />
           <Route path="/faq" component={FAQ} />
-          <Route path="/chat" component={FAQ} />
           <Route path="/privacy" component={Privacy} />
           <Route path="/terms" component={Terms} />
           <Route component={NotFound} />
