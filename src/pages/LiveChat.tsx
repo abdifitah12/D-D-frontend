@@ -11,6 +11,7 @@ import {
   UserMinus,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { getAdminToken, clearAdminToken } from "@/api/auth";
 import type { LiveMediaConnection, MediaSession } from "@/api/live-media";
 
 type RoomParticipant = {
@@ -40,7 +41,7 @@ type SignalMessage = {
 
 const LIVE_ROOM_LIMIT = 10;
 
-function liveSocketUrl(peerId: string, name: string, mode: "start" | "request"): string {
+function liveSocketUrl(peerId: string, name: string, mode: "start" | "request", hostTicket = ""): string {
   const configuredApi = import.meta.env.VITE_API_BASE_URL;
   const base = configuredApi
     ? new URL(configuredApi, window.location.origin)
@@ -49,7 +50,7 @@ function liveSocketUrl(peerId: string, name: string, mode: "start" | "request"):
       : new URL("https://dnd-cafe-ece43a569fa1.herokuapp.com");
   base.protocol = base.protocol === "https:" ? "wss:" : "ws:";
   base.pathname = "/ws/live";
-  base.search = new URLSearchParams({ peerId, name, mode }).toString();
+  base.search = new URLSearchParams({ peerId, name, mode, ...(hostTicket ? { hostTicket } : {}) }).toString();
   return base.toString();
 }
 
@@ -97,7 +98,7 @@ function VideoTile({
   );
 }
 
-export default function LiveChat() {
+export default function LiveChat({ admin = false }: { admin?: boolean } = {}) {
   const [name, setName] = useState("");
   const [view, setView] = useState<"auto" | "browse" | "go-live">("auto");
   const [livePeople, setLivePeople] = useState<{ peerId: string; name: string }[] | null>(null);
@@ -370,7 +371,25 @@ export default function LiveChat() {
       setLocalStream(stream);
 
       const peerId = crypto.randomUUID();
-      const socket = new WebSocket(liveSocketUrl(peerId, name.trim(), joinMode));
+      let hostTicket = "";
+      if (admin) {
+        const token = getAdminToken();
+        if (!token) throw new Error("Sign in as an admin to start live.");
+        const base = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "" : "https://dnd-cafe-ece43a569fa1.herokuapp.com");
+        const response = await fetch(base.replace(/\/$/, "") + "/api/live/host-ticket", {
+          method: "POST", headers: { Authorization: "Bearer " + token }, cache: "no-store",
+        });
+        if (attempt !== attemptRef.current) return;
+        if (response.status === 401 || response.status === 403) {
+          clearAdminToken();
+          throw new Error("Your admin session expired. Sign in again to start live.");
+        }
+        if (!response.ok) throw new Error("Unable to start live. Please try again.");
+        hostTicket = (await response.json()).ticket;
+        if (!hostTicket) throw new Error("Unable to authorize this live room.");
+      }
+      if (attempt !== attemptRef.current) return;
+      const socket = new WebSocket(liveSocketUrl(peerId, name.trim(), admin ? "start" : "request", hostTicket));
       socketRef.current = socket;
       joinTimeoutRef.current = setTimeout(() => {
         if (!joinedRef.current) {
@@ -567,7 +586,7 @@ export default function LiveChat() {
   }
 
   const someoneIsLive = Boolean(livePeople?.length);
-  const entryView = view === "auto" ? (livePeople?.length === 0 ? "go-live" : "browse") : view;
+  const entryView = view === "auto" ? (admin && livePeople?.length === 0 ? "go-live" : "browse") : view;
   const listedHostName = livePeople?.find(person => person.peerId === listedHostId)?.name || livePeople?.[0]?.name;
   const isWatching = roomState === "watching";
   const inRoom = roomState === "live" || isWatching;
@@ -584,15 +603,15 @@ export default function LiveChat() {
         
 
         {roomState === "idle" && <div className="mb-8 text-center">
-          <h1 className="text-3xl text-primary sm:text-4xl">{someoneIsLive ? listedHostName + " is live" : livePeople === null ? "Live at DnD Cafe" : "Start your live room"}</h1>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">{someoneIsLive ? "Watch as a guest with your camera and microphone off, or ask the host to join on camera." : livePeople === null ? "Checking the live room…" : "Go live first. Other visitors will see your room and can watch or request to join."}</p>
+          <h1 className="text-3xl text-primary sm:text-4xl">{someoneIsLive ? listedHostName + " is live" : livePeople === null ? "Live at DnD Cafe" : admin ? "Start your live room" : "Live at DnD Cafe"}</h1>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">{someoneIsLive ? "Watch as a guest with your camera and microphone off, or ask the host to join on camera." : livePeople === null ? "Checking the live room…" : admin ? "Start live from your admin studio. Visitors can watch or request to join." : "The cafe is not live right now. Come back here to watch the next broadcast."}</p>
           <div className="mt-5 flex flex-wrap justify-center gap-3" role="group" aria-label="Live options">
-            <button type="button" disabled={livePeople === null && !directoryError}
+            {(admin || someoneIsLive) && <button type="button" disabled={livePeople === null && !directoryError}
               onClick={() => { setView(someoneIsLive ? "browse" : "go-live"); setJoinMode(someoneIsLive ? "request" : "start"); }}
               className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-primary px-8 py-4 text-base font-semibold text-primary-foreground disabled:opacity-50">
               <Video size={22} />{someoneIsLive ? "Show live" : "Go Live"}
-            </button>
-            {someoneIsLive && <button type="button" onClick={() => { setJoinMode("request"); setView("go-live"); }} className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full border border-border bg-white px-8 py-4 text-base font-semibold text-primary hover:border-accent">
+            </button>}
+            {someoneIsLive && !admin && <button type="button" onClick={() => { setJoinMode("request"); setView("go-live"); }} className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full border border-border bg-white px-8 py-4 text-base font-semibold text-primary hover:border-accent">
               <Users size={22} />Request to join
             </button>}
             {view === "go-live" && someoneIsLive && <button type="button" onClick={() => setView("auto")} className="min-h-14 rounded-full border border-border px-6 text-sm text-primary">Back to live</button>}
@@ -609,7 +628,7 @@ export default function LiveChat() {
             {directoryError ? <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{directoryError}</p>
               : livePeople === null ? <p role="status" className="py-8 text-center text-muted-foreground">Checking who’s live…</p>
               : livePeople.length === 0 ? <div className="py-10 text-center"><Users className="mx-auto mb-4 text-accent" size={36} />
-                  <h3 className="text-xl text-primary">No one is live yet</h3><p className="mt-2 text-sm text-muted-foreground">Be the first to start the room.</p></div>
+                  <h3 className="text-xl text-primary">No one is live yet</h3><p className="mt-2 text-sm text-muted-foreground">The cafe will appear here when an admin starts a broadcast.</p></div>
               : <><p role="status" className="mb-4 text-sm text-muted-foreground">{livePeople.length} / {roomLimit} people live</p>
                   <ul className="grid gap-3 sm:grid-cols-2">{livePeople.map(person => <li key={person.peerId} className="flex items-center gap-3 rounded-2xl border border-border p-4">
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-secondary text-lg font-semibold text-primary">{person.name.slice(0, 1).toUpperCase()}</span>
@@ -619,7 +638,7 @@ export default function LiveChat() {
               <button type="button" disabled={!watchingEnabled} onClick={() => void watchLive()} className="inline-flex min-h-12 items-center justify-center rounded-full bg-primary px-8 py-3 font-semibold text-primary-foreground disabled:opacity-50">Watch live</button>
               <p className="mt-2 text-sm text-muted-foreground">{watchingEnabled ? "Watch without a camera or microphone. Viewer spaces are separate from the 10 on-camera places." : "Watch-only streaming is not available yet."}</p>
             </div>}
-            {!directoryError && livePeople !== null && <button type="button" disabled={livePeople.length >= roomLimit}
+            {!directoryError && livePeople !== null && ((admin && !someoneIsLive) || (!admin && someoneIsLive)) && <button type="button" disabled={livePeople.length >= roomLimit}
               onClick={() => { setJoinMode(livePeople.length ? "request" : "start"); setView("go-live"); }} className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50">
               <Video size={18} />{livePeople.length >= roomLimit ? "Room is full" : livePeople.length ? "Request to join" : "Go Live"}
             </button>}
@@ -743,13 +762,13 @@ export default function LiveChat() {
                     disabled={roomState !== "idle" || !name.trim()}
                     className="inline-flex min-h-12 items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {roomState === "waiting" ? "Waiting for approval..." : roomState === "connecting" ? "Connecting..." : joinMode === "request" ? "Request to join" : "Start live"}
+                    {roomState === "waiting" ? "Waiting for approval..." : roomState === "connecting" ? "Connecting..." : admin ? "Start live" : "Request to join"}
                     {!inRoom && <Video size={17} />}
                   </button>
                 </form>
                 {roomState !== "idle" && <button type="button" onClick={leaveRoom} className="mt-3 min-h-11 rounded-full border border-border px-6 text-sm text-primary">Cancel request</button>}
                 <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-                  The first person starts as host. Guests need the host’s approval to join, with a limit of {LIVE_ROOM_LIMIT} people. Your camera and microphone are shared only after you enter the room.
+                  Only admins can start a live room. Guests need the host’s approval to join, with a limit of {LIVE_ROOM_LIMIT} people. Your camera and microphone are shared only after you enter the room.
                 </p>
               </div>
             )}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
   clearAdminToken,
   getAdminToken,
@@ -204,6 +204,10 @@ export default function AdminEvents() {
           </Button>
         </div>
 
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-white p-6">
+          <div><h2 className="text-xl text-primary">Live streaming</h2><p className="mt-2 text-sm text-muted-foreground">Start your broadcast and manage guest requests from the admin live studio.</p></div>
+          <Link href="/admin/live" className="inline-flex min-h-12 items-center justify-center rounded-full bg-primary px-7 py-3 font-semibold text-primary-foreground">Go Live</Link>
+        </div>
         <div className="grid gap-8 lg:grid-cols-2">
           <form
             className="space-y-5 rounded-2xl border border-border bg-white p-6 shadow-sm md:p-8"

@@ -12,6 +12,7 @@ import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminEvents from "@/pages/AdminEvents";
+import AdminLive from "@/pages/AdminLive";
 import CustomerAuth from "@/pages/CustomerAuth";
 import LiveChat from "@/pages/LiveChat";
 import SupportChat from "@/pages/SupportChat";
@@ -46,10 +47,11 @@ function Router() {
           <Route path="/events" component={Events} />
           <Route path="/admin/login" component={AdminLogin} />
           <Route path="/admin/events" component={AdminEvents} />
+          <Route path="/admin/live" component={AdminLive} />
           <Route path="/login" component={CustomerAuth} />
           <Route path="/signin" component={CustomerAuth} />
           <Route path="/register" component={CustomerAuth} />
-          <Route path="/chat" component={LiveChat} />
+          <Route path="/chat"><LiveChat /></Route>
           <Route path="/messages" component={SupportChat} />
           <Route path="/faq" component={FAQ} />
           <Route path="/privacy" component={Privacy} />

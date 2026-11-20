@@ -11,7 +11,7 @@ const navLinks = [
   { label: "Contact", href: "/contact" },
   { label: "Events", href: "/events" },
   { label: "FAQs", href: "/faq" },
-  { label: "Go Live", href: "/chat" },
+  { label: "Watch Live", href: "/chat" },
 ];
 
 export default function Navbar() {
