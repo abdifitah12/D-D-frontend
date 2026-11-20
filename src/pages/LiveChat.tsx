@@ -99,10 +99,11 @@ function VideoTile({
 
 export default function LiveChat() {
   const [name, setName] = useState("");
-  const [view, setView] = useState<"browse" | "go-live">("browse");
+  const [view, setView] = useState<"auto" | "browse" | "go-live">("auto");
   const [livePeople, setLivePeople] = useState<{ peerId: string; name: string }[] | null>(null);
   const [roomLimit, setRoomLimit] = useState(LIVE_ROOM_LIMIT);
   const [watchingEnabled, setWatchingEnabled] = useState(false);
+  const [listedHostId, setListedHostId] = useState<string | null>(null);
   const sfuRef = useRef<LiveMediaConnection | null>(null);
   const [directoryError, setDirectoryError] = useState("");
   const [directoryRefresh, setDirectoryRefresh] = useState(0);
@@ -129,7 +130,7 @@ export default function LiveChat() {
   const joinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (view !== "browse" || roomState !== "idle") return;
+    if (roomState !== "idle") return;
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
     setLivePeople(null);
@@ -149,6 +150,7 @@ export default function LiveChat() {
         }
         if (controller.signal.aborted) return;
         setLivePeople(status.participants);
+        setListedHostId(typeof status.hostPeerId === "string" ? status.hostPeerId : null);
         setRoomLimit(status.limit);
         setWatchingEnabled(status.watchingEnabled === true);
         setDirectoryError("");
@@ -161,7 +163,7 @@ export default function LiveChat() {
     }
     void refresh();
     return () => { controller.abort(); clearTimeout(timer); };
-  }, [view, roomState, directoryRefresh]);
+  }, [roomState, directoryRefresh]);
 
   function refreshHostRequests() {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
@@ -564,6 +566,9 @@ export default function LiveChat() {
     leaveRoom();
   }
 
+  const someoneIsLive = Boolean(livePeople?.length);
+  const entryView = view === "auto" ? (livePeople?.length === 0 ? "go-live" : "browse") : view;
+  const listedHostName = livePeople?.find(person => person.peerId === listedHostId)?.name || livePeople?.[0]?.name;
   const isWatching = roomState === "watching";
   const inRoom = roomState === "live" || isWatching;
   const isHost = inRoom && hostPeerId === selfPeerId;
@@ -578,21 +583,27 @@ export default function LiveChat() {
       <div className="mx-auto w-full max-w-7xl">
         
 
-        <div className="mb-9 flex flex-wrap justify-center gap-4" role="group" aria-label="Live options">
-          {([{ id: "go-live", label: "Go Live", icon: Video }, { id: "browse", label: "See Who’s Live", icon: Users }] as const).map(option => (
-            <button key={option.id} type="button" aria-pressed={view === option.id}
-              disabled={roomState !== "idle"} onClick={() => { setView(option.id); if (option.id === "go-live") setJoinMode("start"); }}
-              className={"inline-flex min-h-14 items-center justify-center gap-3 rounded-full border px-8 py-4 text-base font-semibold transition-colors disabled:opacity-60 " + (view === option.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-white text-primary hover:border-accent")}>
-              <option.icon size={22} />{option.label}
+        {roomState === "idle" && <div className="mb-8 text-center">
+          <h1 className="text-3xl text-primary sm:text-4xl">{someoneIsLive ? listedHostName + " is live" : livePeople === null ? "Live at DnD Cafe" : "Start your live room"}</h1>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">{someoneIsLive ? "Watch as a guest with your camera and microphone off, or ask the host to join on camera." : livePeople === null ? "Checking the live room…" : "Go live first. Other visitors will see your room and can watch or request to join."}</p>
+          <div className="mt-5 flex flex-wrap justify-center gap-3" role="group" aria-label="Live options">
+            <button type="button" disabled={livePeople === null && !directoryError}
+              onClick={() => { setView(someoneIsLive ? "browse" : "go-live"); setJoinMode(someoneIsLive ? "request" : "start"); }}
+              className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-primary px-8 py-4 text-base font-semibold text-primary-foreground disabled:opacity-50">
+              <Video size={22} />{someoneIsLive ? "Show live" : "Go Live"}
             </button>
-          ))}
-        </div>
+            {someoneIsLive && <button type="button" onClick={() => { setJoinMode("request"); setView("go-live"); }} className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full border border-border bg-white px-8 py-4 text-base font-semibold text-primary hover:border-accent">
+              <Users size={22} />Request to join
+            </button>}
+            {view === "go-live" && someoneIsLive && <button type="button" onClick={() => setView("auto")} className="min-h-14 rounded-full border border-border px-6 text-sm text-primary">Back to live</button>}
+          </div>
+        </div>}
 
-        {view === "browse" && !inRoom ? (
+        {entryView === "browse" && roomState === "idle" ? (
           <div className="mx-auto max-w-4xl rounded-[1.75rem] border border-border bg-white p-6 shadow-xl sm:p-8">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-              <div><h2 className="text-2xl text-primary">Who’s live now</h2>
-                <p className="mt-2 text-sm text-muted-foreground">See who’s in the public room. Your camera and microphone stay off.</p></div>
+              <div><h2 className="text-2xl text-primary">{someoneIsLive ? "Join as a guest" : "Live room"}</h2>
+                <p className="mt-2 text-sm text-muted-foreground">Watching does not turn on your camera or microphone. Only approved guests appear on camera.</p></div>
               <button type="button" onClick={() => setDirectoryRefresh(value => value + 1)} className="min-h-11 rounded-full border border-border px-5 text-sm text-primary hover:border-accent">Refresh</button>
             </div>
             {directoryError ? <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{directoryError}</p>
