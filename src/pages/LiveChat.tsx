@@ -43,7 +43,7 @@ type SignalMessage = {
 
 const LIVE_ROOM_LIMIT = 10;
 
-function liveSocketUrl(peerId: string, name: string, mode: "start" | "join" | "monitor", hostTicket = ""): string {
+function liveSocketUrl(peerId: string, name: string, mode: "start" | "join" | "monitor" | "watch", hostTicket = ""): string {
   const configuredApi = import.meta.env.VITE_API_BASE_URL;
   const base = configuredApi
     ? new URL(configuredApi, window.location.origin)
@@ -107,6 +107,8 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
   const [livePeople, setLivePeople] = useState<{ peerId: string; name: string }[] | null>(null);
   const [roomLimit, setRoomLimit] = useState(LIVE_ROOM_LIMIT);
   const [watchingEnabled, setWatchingEnabled] = useState(false);
+  const [watchTransport, setWatchTransport] = useState<"peer" | "sfu">("peer");
+  const [viewerLimit, setViewerLimit] = useState(3);
   const [listedHostId, setListedHostId] = useState<string | null>(null);
   const sfuRef = useRef<LiveMediaConnection | null>(null);
   const [directoryError, setDirectoryError] = useState("");
@@ -160,6 +162,8 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
         setListedHostId(typeof status.hostPeerId === "string" ? status.hostPeerId : null);
         setRoomLimit(status.limit);
         setWatchingEnabled(status.watchingEnabled === true);
+        setWatchTransport(status.watchTransport === "sfu" ? "sfu" : "peer");
+        setViewerLimit(Number.isInteger(status.viewerLimit) ? status.viewerLimit : 3);
         setDirectoryError("");
       } catch (failure) {
         if (controller.signal.aborted) return;
@@ -206,27 +210,30 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
     await connection.connect(session, local);
   }
 
-  async function monitorLive() {
-    if (roomState !== "idle" || !admin) return;
+  async function watchPeerLive() {
+    if (roomState !== "idle") return;
     const attempt = ++attemptRef.current;
     setError(""); setView("go-live"); setRoomState("connecting");
     try {
-      const token = getAdminToken();
-      if (!token) throw new Error("Admin sign-in required.");
-      const base = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "" : "https://dnd-cafe-ece43a569fa1.herokuapp.com");
-      const response = await fetch(base.replace(/\/$/, "") + "/api/live/admin/monitor-ticket", { method: "POST", headers: { Authorization: "Bearer " + token }, cache: "no-store" });
-      if (!response.ok) throw new Error("Unable to authorize monitoring. Sign in again and try.");
-      const { ticket } = await response.json();
+      let ticket = "";
+      if (admin) {
+        const token = getAdminToken();
+        if (!token) throw new Error("Admin sign-in required.");
+        const base = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "" : "https://dnd-cafe-ece43a569fa1.herokuapp.com");
+        const response = await fetch(base.replace(/\/$/, "") + "/api/live/admin/monitor-ticket", { method: "POST", headers: { Authorization: "Bearer " + token }, cache: "no-store" });
+        if (!response.ok) throw new Error("Unable to authorize monitoring. Sign in again and try.");
+        ticket = (await response.json()).ticket;
+      }
       if (attempt !== attemptRef.current) return;
       const id = crypto.randomUUID();
-      const socket = new WebSocket(liveSocketUrl(id, "Admin monitor", "monitor", ticket));
+      const socket = new WebSocket(liveSocketUrl(id, admin ? "Admin monitor" : "Viewer", admin ? "monitor" : "watch", ticket));
       socketRef.current = socket; monitorRef.current = true; manualLeaveRef.current = false;
-      joinTimeoutRef.current = setTimeout(() => { leaveRoom(); setError("Monitoring connection timed out."); }, 12_000);
+      joinTimeoutRef.current = setTimeout(() => { leaveRoom(); setView("browse"); setError("The viewing connection timed out."); }, 12_000);
       socket.onmessage = event => {
         if (socketRef.current !== socket) return;
         let data: SignalMessage;
-        try { data = JSON.parse(String(event.data)); } catch { leaveRoom(); setError("Invalid monitor response."); return; }
-        if (data.type === "monitoring") {
+        try { data = JSON.parse(String(event.data)); } catch { leaveRoom(); setView("browse"); setError("Invalid live-room response."); return; }
+        if (data.type === "monitoring" || data.type === "watching") {
           if (joinTimeoutRef.current) clearTimeout(joinTimeoutRef.current);
           joinTimeoutRef.current = null; joinedRef.current = true;
           setSelfPeerId(id); setHostPeerId(data.hostPeerId || ""); setRoomState("watching");
@@ -240,19 +247,19 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
         } else if (data.type === "guest-controls") {
           setParticipants(current => current.map(person => person.peerId === data.peerId ? { ...person, audioBlocked: data.audioBlocked, cameraBlocked: data.cameraBlocked } : person));
         } else if (data.type === "room-ended" || data.type === "error") {
-          leaveRoom(); setError(data.message || "The live room ended.");
+          leaveRoom(); setView("browse"); setError(data.message || "The live room ended.");
         }
       };
       socket.onerror = () => { if (socketRef.current === socket) setError("Could not connect to the live room."); };
-      socket.onclose = () => { if (socketRef.current === socket && !manualLeaveRef.current) { leaveRoom(); setError("The monitoring connection closed."); } };
+      socket.onclose = () => { if (socketRef.current === socket && !manualLeaveRef.current) { leaveRoom(); setView("browse"); setError("The viewing connection closed."); } };
     } catch (failure) {
       if (attempt !== attemptRef.current) return;
-      leaveRoom(); setError(failure instanceof Error ? failure.message : "Unable to monitor live.");
+      leaveRoom(); setView("browse"); setError(failure instanceof Error ? failure.message : "Unable to watch live.");
     }
   }
 
   async function watchLive() {
-    if (admin && !watchingEnabled) { await monitorLive(); return; }
+    if (watchTransport === "peer") { await watchPeerLive(); return; }
     if (roomState !== "idle") return;
     const attempt = ++attemptRef.current;
     setError(""); setView("go-live"); setRoomState("connecting");
@@ -268,7 +275,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
       setRoomState("watching");
     } catch (failure) {
       if (attempt !== attemptRef.current) return;
-      leaveRoom();
+      leaveRoom(); setView("browse");
       setError(failure instanceof Error ? failure.message : "Unable to watch this stream.");
     }
   }
@@ -682,7 +689,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
             {!admin && !someoneIsLive && <button type="button" onClick={() => setView("request-broadcast")} className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-primary px-8 py-4 text-base font-semibold text-primary-foreground"><Video size={22} />Request to Go Live</button>}
             {view === "request-broadcast" && <button type="button" onClick={() => setView("auto")} className="min-h-14 rounded-full border border-border px-6 text-sm text-primary">Back to live</button>}
             {(admin || someoneIsLive) && <button type="button" disabled={livePeople === null && !directoryError}
-              onClick={() => { setView(someoneIsLive ? "browse" : "go-live"); setJoinMode(someoneIsLive ? "request" : "start"); }}
+              onClick={() => { if (someoneIsLive) { void watchLive(); } else { setView("go-live"); setJoinMode("start"); } }}
               className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-primary px-8 py-4 text-base font-semibold text-primary-foreground disabled:opacity-50">
               <Video size={22} />{someoneIsLive ? "Show live" : "Go Live"}
             </button>}
@@ -702,6 +709,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
                 <p className="mt-2 text-sm text-muted-foreground">Watching does not turn on your camera or microphone. Guests can join on camera when there is room.</p></div>
               <button type="button" onClick={() => setDirectoryRefresh(value => value + 1)} className="min-h-11 rounded-full border border-border px-5 text-sm text-primary hover:border-accent">Refresh</button>
             </div>
+            {error && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>}
             {directoryError ? <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{directoryError}</p>
               : livePeople === null ? <p role="status" className="py-8 text-center text-muted-foreground">Checking who’s live…</p>
               : livePeople.length === 0 ? <div className="py-10 text-center"><Users className="mx-auto mb-4 text-accent" size={36} />
@@ -713,7 +721,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
                   </li>)}</ul></>}
             {!directoryError && livePeople !== null && livePeople.length > 0 && <div className="mt-6">
               <button type="button" disabled={!watchingEnabled && !admin} onClick={() => void watchLive()} className="inline-flex min-h-12 items-center justify-center rounded-full bg-primary px-8 py-3 font-semibold text-primary-foreground disabled:opacity-50">{admin ? "Monitor live" : "Watch live"}</button>
-              <p className="mt-2 text-sm text-muted-foreground">{watchingEnabled ? "Watch without a camera or microphone. Viewer spaces are separate from the 10 on-camera places." : admin ? "Monitor without turning on your camera or microphone." : "Watch-only streaming is not available yet."}</p>
+              <p className="mt-2 text-sm text-muted-foreground">{admin ? "Monitor without turning on your camera or microphone." : !watchingEnabled ? "Viewing spaces are full. Please try again later." : watchTransport === "peer" ? "Watch with your camera and microphone off. Up to " + viewerLimit + " viewers can watch in this mode." : "Watch without a camera or microphone. Viewers do not use on-camera places."}</p>
             </div>}
             {!directoryError && livePeople !== null && ((admin && !someoneIsLive) || (!admin && someoneIsLive)) && <button type="button" disabled={livePeople.length >= roomLimit}
               onClick={() => { setJoinMode(livePeople.length ? "request" : "start"); setView("go-live"); }} className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50">
