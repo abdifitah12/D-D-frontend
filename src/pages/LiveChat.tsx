@@ -11,6 +11,7 @@ import {
   UserMinus,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import LiveCommentsPanel, { type LiveComment } from "@/components/LiveCommentsPanel";
 import { getAdminToken, clearAdminToken } from "@/api/auth";
 import BroadcastRequestForm from "@/components/BroadcastRequestForm";
 import { startApprovedBroadcast, saveOwnBroadcast, type OwnBroadcast } from "@/api/broadcasts";
@@ -26,6 +27,8 @@ type RoomParticipant = {
 };
 
 type SignalMessage = {
+  comment?: LiveComment;
+  comments?: LiveComment[];
   media?: MediaSession;
   type: string;
   peerId?: string;
@@ -43,7 +46,7 @@ type SignalMessage = {
 
 const LIVE_ROOM_LIMIT = 10;
 
-function liveSocketUrl(peerId: string, name: string, mode: "start" | "join" | "monitor" | "watch", hostTicket = ""): string {
+function liveSocketUrl(peerId: string, name: string, mode: "start" | "join" | "monitor" | "watch" | "comments", hostTicket = "", expectedHost = ""): string {
   const configuredApi = import.meta.env.VITE_API_BASE_URL;
   const base = configuredApi
     ? new URL(configuredApi, window.location.origin)
@@ -52,7 +55,7 @@ function liveSocketUrl(peerId: string, name: string, mode: "start" | "join" | "m
       : new URL("https://dnd-cafe-ece43a569fa1.herokuapp.com");
   base.protocol = base.protocol === "https:" ? "wss:" : "ws:";
   base.pathname = "/ws/live";
-  base.search = new URLSearchParams({ peerId, name, mode, ...(hostTicket ? { hostTicket } : {}) }).toString();
+  base.search = new URLSearchParams({ peerId, name, mode, ...(hostTicket ? { hostTicket } : {}), ...(expectedHost ? { expectedHost } : {}) }).toString();
   return base.toString();
 }
 
@@ -102,6 +105,13 @@ function VideoTile({
 
 export default function LiveChat({ admin = false, monitorOnOpen = false }: { admin?: boolean; monitorOnOpen?: boolean } = {}) {
   const [name, setName] = useState("");
+  const [liveComments, setLiveComments] = useState<LiveComment[]>([]);
+  const [commentDraft, setCommentDraft] = useState("");
+  const [commentsConnected, setCommentsConnected] = useState(false);
+  const [commentBusy, setCommentBusy] = useState(false);
+  const [commentError, setCommentError] = useState("");
+  const commentPending = useRef<string | null>(null);
+  const commentTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [broadcastPermission, setBroadcastPermission] = useState<OwnBroadcast | null>(null);
   const [view, setView] = useState<"auto" | "browse" | "go-live" | "request-broadcast">("auto");
   const [livePeople, setLivePeople] = useState<{ peerId: string; name: string }[] | null>(null);
@@ -176,6 +186,64 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
     return () => { controller.abort(); clearTimeout(timer); };
   }, [roomState, directoryRefresh]);
 
+  function handleCommentMessage(data: SignalMessage) {
+    const valid = (comment: LiveComment) => comment && typeof comment.id === "string" && typeof comment.text === "string"
+      && typeof comment.name === "string" && typeof comment.authorId === "string" && typeof comment.clientId === "string"
+      && ["host", "admin", "guest", "viewer"].includes(comment.role);
+    if (data.type === "comments-history" && Array.isArray(data.comments)) {
+      setLiveComments(data.comments.filter(valid).slice(-100)); return true;
+    }
+    if (data.type === "comment" && data.comment && valid(data.comment)) {
+      const comment = data.comment;
+      setLiveComments(current => current.some(item => item.id === comment.id) ? current : [...current, comment].slice(-100));
+      if (commentPending.current === comment.clientId) {
+        if (commentTimeout.current) clearTimeout(commentTimeout.current);
+        commentPending.current = null; setCommentBusy(false); setCommentDraft(""); setCommentError("");
+      }
+      return true;
+    }
+    if (data.type === "comment-error") {
+      if (commentTimeout.current) clearTimeout(commentTimeout.current);
+      commentPending.current = null; setCommentBusy(false); setCommentError(data.message || "Unable to send your comment.");
+      return true;
+    }
+    return false;
+  }
+
+  function submitComment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const text = commentDraft.trim();
+    const socket = socketRef.current;
+    if (!text || commentBusy) return;
+    if (!commentsConnected || socket?.readyState !== WebSocket.OPEN) { setCommentError("Comments disconnected. Reopen the stream to reconnect."); return; }
+    const clientId = crypto.randomUUID();
+    commentPending.current = clientId; setCommentBusy(true); setCommentError("");
+    socket.send(JSON.stringify({ type: "comment", text, clientId }));
+    commentTimeout.current = setTimeout(() => {
+      if (commentPending.current === clientId) { commentPending.current = null; setCommentBusy(false); setCommentError("Your comment was not confirmed. Please try again."); }
+    }, 8000);
+  }
+
+  function openStreamComments(ticket: string | undefined, expectedHost: string) {
+    if (!ticket) { setCommentError("Comments are unavailable for this stream."); return; }
+    try {
+      const id = crypto.randomUUID();
+      const socket = new WebSocket(liveSocketUrl(id, "Viewer", "comments", ticket, expectedHost));
+      socketRef.current = socket; setSelfPeerId(id); manualLeaveRef.current = false;
+      socket.onmessage = event => {
+        if (socketRef.current !== socket) return;
+        let data: SignalMessage;
+        try { data = JSON.parse(String(event.data)); } catch { setCommentError("Unable to read comments."); return; }
+        if (handleCommentMessage(data)) return;
+        if (data.type === "comments-ready") { setCommentsConnected(true); setCommentError(""); }
+        else if (data.type === "room-ended") { leaveRoom(); setView("browse"); setError(data.message || "The live room ended."); }
+        else if (data.type === "error") setCommentError(data.message || "Unable to connect comments.");
+      };
+      socket.onerror = () => { if (socketRef.current === socket) setCommentError("Comments disconnected. Reopen the stream to reconnect."); };
+      socket.onclose = () => { if (socketRef.current === socket) { if (commentTimeout.current) clearTimeout(commentTimeout.current); commentPending.current = null; setCommentsConnected(false); setCommentBusy(false); setCommentError("Comments disconnected. Reopen the stream to reconnect."); } };
+    } catch { setCommentError("Unable to connect comments. Reopen the stream to try again."); }
+  }
+
   function refreshHostRequests() {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify({ type: "sync-requests" }));
@@ -233,7 +301,9 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
         if (socketRef.current !== socket) return;
         let data: SignalMessage;
         try { data = JSON.parse(String(event.data)); } catch { leaveRoom(); setView("browse"); setError("Invalid live-room response."); return; }
+        if (handleCommentMessage(data)) return;
         if (data.type === "monitoring" || data.type === "watching") {
+          setCommentsConnected(true);
           if (joinTimeoutRef.current) clearTimeout(joinTimeoutRef.current);
           joinTimeoutRef.current = null; joinedRef.current = true;
           setSelfPeerId(id); setHostPeerId(data.hostPeerId || ""); setRoomState("watching");
@@ -267,12 +337,13 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
       const base = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "" : "https://dnd-cafe-ece43a569fa1.herokuapp.com");
       const response = await fetch(base.replace(/\/$/, "") + "/api/live/watch", { method: "POST", cache: "no-store" });
       if (!response.ok) throw new Error("The live stream is unavailable. Please try again.");
-      const session: { media: MediaSession; hostPeerId: string } = await response.json();
+      const session: { media: MediaSession; hostPeerId: string; commentsTicket?: string } = await response.json();
       if (attempt !== attemptRef.current) return;
       setHostPeerId(session.hostPeerId);
       await connectMedia(session.media, null);
       if (attempt !== attemptRef.current) return;
       setRoomState("watching");
+      openStreamComments(session.commentsTicket, session.hostPeerId);
     } catch (failure) {
       if (attempt !== attemptRef.current) return;
       leaveRoom(); setView("browse");
@@ -376,6 +447,9 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
   }
 
   function leaveRoom() {
+    if (commentTimeout.current) clearTimeout(commentTimeout.current);
+    commentPending.current = null; setCommentBusy(false); setCommentsConnected(false);
+    setLiveComments([]); setCommentDraft(""); setCommentError("");
     monitorRef.current = false;
     sfuRef.current?.close();
     sfuRef.current = null;
@@ -405,6 +479,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
   }
 
   useEffect(() => () => {
+    if (commentTimeout.current) clearTimeout(commentTimeout.current);
     sfuRef.current?.close();
     attemptRef.current++;
     manualLeaveRef.current = true;
@@ -478,6 +553,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
           return;
         }
 
+        if (handleCommentMessage(data)) return;
         if (data.type === "waiting") {
           if (joinTimeoutRef.current) clearTimeout(joinTimeoutRef.current);
           setRoomState("waiting");
@@ -541,6 +617,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
         }
         if (data.type === "joined") {
           joinedRef.current = true;
+          setCommentsConnected(true);
           setSelfPeerId(peerId);
           setHostPeerId(data.hostPeerId || peerId);
           if (!admin && broadcastPermission && data.hostPeerId === peerId) {
@@ -816,6 +893,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
                     {isHost ? "End live for everyone" : isWatching ? "Stop watching" : "Leave room"}
                   </button>
                 </div>
+                <LiveCommentsPanel comments={liveComments} draft={commentDraft} connected={commentsConnected} busy={commentBusy} error={commentError} onDraft={setCommentDraft} onSubmit={submitComment} />
               </>
             ) : (
               <div className="mx-auto w-full max-w-3xl py-6">
