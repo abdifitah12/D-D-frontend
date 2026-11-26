@@ -43,7 +43,7 @@ type SignalMessage = {
 
 const LIVE_ROOM_LIMIT = 10;
 
-function liveSocketUrl(peerId: string, name: string, mode: "start" | "request" | "monitor", hostTicket = ""): string {
+function liveSocketUrl(peerId: string, name: string, mode: "start" | "join" | "monitor", hostTicket = ""): string {
   const configuredApi = import.meta.env.VITE_API_BASE_URL;
   const base = configuredApi
     ? new URL(configuredApi, window.location.origin)
@@ -451,7 +451,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
         hostTicket = (await startApprovedBroadcast(broadcastPermission)).ticket;
       }
       if (attempt !== attemptRef.current) return;
-      const socket = new WebSocket(liveSocketUrl(peerId, name.trim(), admin || broadcastPermission ? "start" : "request", hostTicket));
+      const socket = new WebSocket(liveSocketUrl(peerId, name.trim(), admin || broadcastPermission ? "start" : "join", hostTicket));
       socketRef.current = socket;
       joinTimeoutRef.current = setTimeout(() => {
         if (!joinedRef.current) {
@@ -677,9 +677,9 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
 
         {roomState === "idle" && <div className="mb-8 text-center">
           <h1 className="text-3xl text-primary sm:text-4xl">{someoneIsLive ? listedHostName + " is live" : livePeople === null ? "Live at DnD Cafe" : admin ? "Start your live room" : "Live at DnD Cafe"}</h1>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">{someoneIsLive ? "Watch as a guest with your camera and microphone off, or ask the host to join on camera." : livePeople === null ? "Checking the live room…" : admin ? "Start live from your admin studio. Visitors can watch or request to join." : "The cafe is not live right now. Come back here to watch the next broadcast."}</p>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">{someoneIsLive ? "Watch as a guest with your camera and microphone off, or join on camera immediately when a space is available." : livePeople === null ? "Checking the live room…" : admin ? "Start live from your admin studio. Visitors can watch or join as guests." : "The cafe is not live right now. Come back here to watch the next broadcast."}</p>
           <div className="mt-5 flex flex-wrap justify-center gap-3" role="group" aria-label="Live options">
-            {!admin && <button type="button" onClick={() => setView("request-broadcast")} className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-primary px-8 py-4 text-base font-semibold text-primary-foreground"><Video size={22} />Request to Go Live</button>}
+            {!admin && !someoneIsLive && <button type="button" onClick={() => setView("request-broadcast")} className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-primary px-8 py-4 text-base font-semibold text-primary-foreground"><Video size={22} />Request to Go Live</button>}
             {view === "request-broadcast" && <button type="button" onClick={() => setView("auto")} className="min-h-14 rounded-full border border-border px-6 text-sm text-primary">Back to live</button>}
             {(admin || someoneIsLive) && <button type="button" disabled={livePeople === null && !directoryError}
               onClick={() => { setView(someoneIsLive ? "browse" : "go-live"); setJoinMode(someoneIsLive ? "request" : "start"); }}
@@ -687,7 +687,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
               <Video size={22} />{someoneIsLive ? "Show live" : "Go Live"}
             </button>}
             {someoneIsLive && !admin && <button type="button" onClick={() => { setJoinMode("request"); setView("go-live"); }} className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full border border-border bg-white px-8 py-4 text-base font-semibold text-primary hover:border-accent">
-              <Users size={22} />Request to join
+              <Users size={22} />Join live
             </button>}
             {view === "go-live" && someoneIsLive && <button type="button" onClick={() => setView("auto")} className="min-h-14 rounded-full border border-border px-6 text-sm text-primary">Back to live</button>}
           </div>
@@ -699,7 +699,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
           <div className="mx-auto max-w-4xl rounded-[1.75rem] border border-border bg-white p-6 shadow-xl sm:p-8">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
               <div><h2 className="text-2xl text-primary">{someoneIsLive ? "Join as a guest" : "Live room"}</h2>
-                <p className="mt-2 text-sm text-muted-foreground">Watching does not turn on your camera or microphone. Only approved guests appear on camera.</p></div>
+                <p className="mt-2 text-sm text-muted-foreground">Watching does not turn on your camera or microphone. Guests can join on camera when there is room.</p></div>
               <button type="button" onClick={() => setDirectoryRefresh(value => value + 1)} className="min-h-11 rounded-full border border-border px-5 text-sm text-primary hover:border-accent">Refresh</button>
             </div>
             {directoryError ? <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{directoryError}</p>
@@ -717,7 +717,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
             </div>}
             {!directoryError && livePeople !== null && ((admin && !someoneIsLive) || (!admin && someoneIsLive)) && <button type="button" disabled={livePeople.length >= roomLimit}
               onClick={() => { setJoinMode(livePeople.length ? "request" : "start"); setView("go-live"); }} className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50">
-              <Video size={18} />{livePeople.length >= roomLimit ? "Room is full" : livePeople.length ? "Request to join" : "Go Live"}
+              <Video size={18} />{livePeople.length >= roomLimit ? "Room is full" : livePeople.length ? "Join live" : "Go Live"}
             </button>}
           </div>
         ) : (
@@ -741,7 +741,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
           <div className="p-5 sm:p-7">
             {inRoom ? (
               <>
-                {isHost && <div role="region" aria-label="Host join requests" aria-live="polite" className="mb-5 rounded-2xl border-2 border-accent/40 bg-secondary/40 p-4 sm:p-5">
+                {isHost && joinRequests.length > 0 && <div role="region" aria-label="Host join requests" aria-live="polite" className="mb-5 rounded-2xl border-2 border-accent/40 bg-secondary/40 p-4 sm:p-5">
                   <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold text-primary">Join requests ({joinRequests.length})</h3><button type="button" onClick={refreshHostRequests} className="min-h-11 rounded-full border border-border bg-white px-4 text-sm text-primary">Refresh requests</button></div>
                   {joinRequests.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No pending requests. When a guest submits a request, their name and Accept / Decline buttons appear here.</p>
                     : <ul className="mt-3 space-y-3">{joinRequests.map(request => <li key={request.peerId} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-3">
@@ -770,7 +770,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
                 {error && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>}
                 {participants.length === 0 && !isWatching && (
                   <p className="mt-5 text-center text-sm text-muted-foreground">
-                    You’re live. Share this page so guests can request to join.
+                    You’re live. Share this page so guests can join.
                   </p>
                 )}
                 {moderationNotice && <p role="status" className="mt-4 rounded-xl bg-secondary p-4 text-sm text-primary">{moderationNotice}</p>}
@@ -797,7 +797,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
                     {cameraOff ? <CameraOff size={19} /> : <Camera size={19} />}
                   </button>
                   </>}
-                  {isWatching && !admin && <><button type="button" onClick={() => { leaveRoom(); setJoinMode("request"); setView("go-live"); }} className="min-h-12 rounded-full border border-border px-6 text-sm text-primary">Request to join on camera</button></>}
+                  {isWatching && !admin && <><button type="button" onClick={() => { leaveRoom(); setJoinMode("request"); setView("go-live"); }} className="min-h-12 rounded-full border border-border px-6 text-sm text-primary">Join on camera</button></>}
                   {isWatching && <button type="button" onClick={() => { void sfuRef.current?.startAudio(); stageRef.current?.querySelectorAll("video").forEach(video => { void video.play().catch(() => setError("Unable to play video. Please try again.")); }); }} className="min-h-12 rounded-full border border-border px-6 text-sm text-primary">Enable sound</button>}
                   <button
                     type="button"
@@ -814,7 +814,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
                 {localStream ? <div className="mb-6"><VideoTile stream={localStream} name="Your preview · visible only to you" muted mirrored /></div> : <div className="mb-6 flex aspect-video items-center justify-center rounded-2xl bg-[#241c18] text-primary-foreground/80">
                   <div className="text-center">
                     <Video className="mx-auto mb-3 text-accent" size={38} />
-                    <p className="text-sm">Start a live room or request to join the host.</p>
+                    <p className="text-sm">Join the live room with your camera and microphone.</p>
                   </div>
                 </div>}
                 {error && (
@@ -840,13 +840,13 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
                     disabled={roomState !== "idle" || !name.trim()}
                     className="inline-flex min-h-12 items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {roomState === "waiting" ? "Waiting for approval..." : roomState === "connecting" ? "Connecting..." : admin || broadcastPermission ? "Start live" : "Request to join"}
+                    {roomState === "waiting" ? "Waiting for approval..." : roomState === "connecting" ? "Connecting..." : admin || broadcastPermission ? "Start live" : "Join live"}
                     {!inRoom && <Video size={17} />}
                   </button>
                 </form>
                 {roomState !== "idle" && <button type="button" onClick={leaveRoom} className="mt-3 min-h-11 rounded-full border border-border px-6 text-sm text-primary">Cancel request</button>}
                 <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-                  An admin must approve visitors before they can start a broadcast. Guests need the host’s approval to join, with a limit of {LIVE_ROOM_LIMIT} people. Your camera and microphone are shared only after you enter the room.
+                  An admin must approve visitors before they can start a broadcast. Guests can join an existing room without a request, with a limit of {LIVE_ROOM_LIMIT} people. Your camera and microphone are shared only after you enter the room.
                 </p>
               </div>
             )}
