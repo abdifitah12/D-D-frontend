@@ -1,11 +1,13 @@
 import { useEffect } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { getAdminToken } from "@/api/auth";
 import LiveChat from "./LiveChat";
+import AdminBroadcastManager from "@/components/AdminBroadcastManager";
 
 export default function AdminLive() {
   const [, setLocation] = useLocation();
   const token = getAdminToken();
+  const monitorRequested = new URLSearchParams(useSearch()).get("monitor") === "1";
   useEffect(() => { if (!token) setLocation("/admin/login"); }, [token, setLocation]);
   if (!token) return null;
   return <>
@@ -13,6 +15,7 @@ export default function AdminLive() {
       <h1 className="text-xl font-semibold text-primary">Admin live studio</h1>
       <Link href="/admin/events" className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm text-primary">Back to admin</Link>
     </div>
-    <LiveChat admin />
+    <div className="mx-auto mt-6 w-full max-w-7xl px-5 md:px-8"><AdminBroadcastManager token={token} /></div>
+    <LiveChat admin monitorOnOpen={monitorRequested} />
   </>;
 }
