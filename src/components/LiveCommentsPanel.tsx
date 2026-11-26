@@ -15,7 +15,7 @@ export default function LiveCommentsPanel({ comments, draft, connected, busy, er
   useEffect(() => { if (list.current && pinned.current) list.current.scrollTop = list.current.scrollHeight; }, [comments]);
   return <section className="mt-6 rounded-2xl border border-border bg-white p-4 sm:p-5" aria-label="Live comments">
     <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h3 className="text-xl text-primary">Live comments</h3><p className="text-xs text-muted-foreground">Visible to everyone watching</p></div>
-    <div ref={list} role="log" aria-label="Comments in this live room" aria-live="polite" className="max-h-64 space-y-3 overflow-y-auto rounded-xl bg-secondary/30 p-3 sm:p-4"
+    <div ref={list} role="log" aria-label="Comments in this live room" aria-live="polite" tabIndex={0} style={{ scrollbarGutter: "stable" }} className="h-48 space-y-3 overflow-y-scroll overscroll-contain rounded-xl bg-secondary/30 p-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent sm:h-64 sm:p-4"
       onScroll={() => { if (list.current) pinned.current = list.current.scrollHeight - list.current.scrollTop - list.current.clientHeight < 40; }}>
       {comments.length === 0 ? <p className="py-5 text-center text-sm text-muted-foreground">No comments yet. Say hello while you watch.</p>
         : comments.map(comment => <article key={comment.id} className="rounded-xl bg-white p-3 text-sm">
