@@ -1,6 +1,9 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "wouter";
 import {
+  Maximize,
+  Minimize,
+  Volume2,
   Camera,
   CameraOff,
   Mic,
@@ -66,6 +69,8 @@ function VideoTile({
   mirrored = false,
   cameraOff = false,
   featured = false,
+  expanded = false,
+  onAudioBlocked,
 }: {
   stream: MediaStream | null;
   name: string;
@@ -73,21 +78,33 @@ function VideoTile({
   mirrored?: boolean;
   cameraOff?: boolean;
   featured?: boolean;
+  expanded?: boolean;
+  onAudioBlocked?: () => void;
 }) {
   const video = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    if (video.current) video.current.srcObject = stream;
-  }, [stream]);
+    const element = video.current;
+    if (!element || !stream) return;
+    element.srcObject = stream;
+    element.muted = muted;
+    void element.play().catch(() => {
+      if (element.srcObject !== stream || muted) return;
+      onAudioBlocked?.();
+      element.muted = true;
+      void element.play().catch(() => {});
+    });
+  }, [stream, muted, onAudioBlocked]);
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl bg-[#241c18] ${featured ? "aspect-[3/4] sm:aspect-video" : "aspect-video"}`}>
+    <div className={`relative overflow-hidden rounded-2xl bg-[#241c18] ${expanded ? "h-full w-full" : featured ? "aspect-[3/4] sm:aspect-video" : "aspect-video"}`}>
       {stream && (
         <video
           ref={video}
           autoPlay
           playsInline
           muted={muted}
+          data-allow-audio={!muted}
           className={`h-full w-full object-cover ${cameraOff ? "absolute inset-0 opacity-0" : ""} ${mirrored ? "-scale-x-100" : ""}`}
         />
       )}
@@ -143,6 +160,10 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
   const monitorRef = useRef(false);
   const autoMonitorStarted = useRef(false);
   const stageRef = useRef<HTMLDivElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [nativeFullscreen, setNativeFullscreen] = useState(false);
+  const [audioBlocked, setAudioBlocked] = useState(false);
+  const handleAudioBlocked = useCallback(() => setAudioBlocked(true), []);
   const streamRef = useRef<MediaStream | null>(null);
   const peersRef = useRef(new Map<string, RTCPeerConnection>());
   const pendingIceRef = useRef(new Map<string, RTCIceCandidateInit[]>());
@@ -246,6 +267,43 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
     } catch { setCommentError("Unable to connect comments. Reopen the stream to try again."); }
   }
 
+  async function enableSound() {
+    const attempts: Promise<unknown>[] = [];
+    if (sfuRef.current) attempts.push(sfuRef.current.startAudio());
+    stageRef.current?.querySelectorAll<HTMLVideoElement>('video[data-allow-audio="true"]').forEach(video => {
+      video.muted = false;
+      video.volume = 1;
+      attempts.push(video.play());
+    });
+    const results = await Promise.allSettled(attempts);
+    const blocked = results.some(result => result.status === "rejected");
+    setAudioBlocked(blocked);
+    if (blocked) setError("Sound could not start. Tap Enable sound again and check your browser's sound permission.");
+    else setError("");
+  }
+
+  async function toggleFullscreen() {
+    if (document.fullscreenElement === stageRef.current) { await document.exitFullscreen(); return; }
+    if (expanded) { setExpanded(false); return; }
+    try {
+      if (stageRef.current?.requestFullscreen) { await stageRef.current.requestFullscreen(); return; }
+    } catch { /* Use an in-page fullscreen layout when the browser does not support it. */ }
+    setExpanded(true);
+  }
+
+  useEffect(() => {
+    const sync = () => setNativeFullscreen(Boolean(stageRef.current && document.fullscreenElement === stageRef.current));
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setExpanded(false); };
+    document.addEventListener("fullscreenchange", sync);
+    document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("fullscreenchange", sync); document.removeEventListener("keydown", escape); };
+  }, []);
+  useEffect(() => {
+    if (!expanded) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previous; };
+  }, [expanded]);
   function refreshHostRequests() {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify({ type: "sync-requests" }));
@@ -449,6 +507,8 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
   }
 
   function leaveRoom() {
+    setExpanded(false); setAudioBlocked(false);
+    if (stageRef.current && document.fullscreenElement === stageRef.current) void document.exitFullscreen().catch(() => {});
     if (commentTimeout.current) clearTimeout(commentTimeout.current);
     commentPending.current = null; setCommentBusy(false); setCommentsConnected(false);
     setLiveComments([]); setCommentDraft(""); setCommentError("");
@@ -837,15 +897,18 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
                         <button type="button" onClick={() => decideRequest(request.peerId, "decline")} className="min-h-11 rounded-full border border-border px-5 text-sm text-primary">Decline</button></div>
                     </li>)}</ul>}
                 </div>}
-                <div ref={stageRef} className="relative isolate overflow-hidden rounded-2xl bg-[#241c18]">
+                <div ref={stageRef} className={`${expanded || nativeFullscreen ? "fixed inset-0 z-[100] h-[100dvh] w-screen" : "relative isolate rounded-2xl"} overflow-hidden bg-[#241c18]`}>
                   <VideoTile
-                    featured stream={isHost ? localStream : host?.stream || null}
+                    featured expanded={expanded || nativeFullscreen} onAudioBlocked={handleAudioBlocked} stream={isHost ? localStream : host?.stream || null}
                     name={isHost ? name.trim() + " (Host · You)" : (host?.name || "Host") + " (Host)"}
                     muted={isHost || Boolean(host?.audioBlocked)} mirrored={isHost} cameraOff={isHost ? cameraOff : Boolean(host?.cameraBlocked || host?.cameraMuted)}
                   />
-                  {guestTiles.length > 0 && <div aria-label="Guests in the room" className="absolute right-2 top-2 bottom-24 max-h-[45%] z-10 flex w-[30%] max-w-60 flex-col gap-2 overflow-y-auto rounded-xl sm:right-4 sm:top-4 sm:gap-3">
+                  <div className="absolute right-3 top-3 z-30 flex gap-2">
+                    <button type="button" onClick={() => void enableSound()} aria-label="Enable live sound" className="flex min-h-11 items-center gap-2 rounded-full bg-black/60 px-3 text-sm text-white"><Volume2 size={19} /><span className="hidden sm:inline">Enable sound</span></button>
+                    <button type="button" onClick={() => void toggleFullscreen().catch(() => setError("Unable to change fullscreen mode."))} aria-label={expanded || nativeFullscreen ? "Exit fullscreen" : "View fullscreen"} className="flex h-11 w-11 items-center justify-center rounded-full bg-black/60 text-white">{expanded || nativeFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}</button>
+                  </div>                  {guestTiles.length > 0 && <div aria-label="Guests in the room" className="absolute right-2 top-16 bottom-24 max-h-[45%] z-10 flex w-[30%] max-w-60 flex-col gap-2 overflow-y-auto rounded-xl sm:right-4 sm:top-16 sm:gap-3">
                     {guestTiles.map(guest => <div key={guest.peerId} className="shrink-0 overflow-hidden rounded-xl border-2 border-white/80 shadow-lg">
-                      <VideoTile stream={guest.stream} name={guest.name} muted={guest.peerId === selfPeerId || Boolean(guest.audioBlocked)} mirrored={guest.peerId === selfPeerId} cameraOff={guest.peerId === selfPeerId ? cameraOff : Boolean(guest.cameraBlocked || guest.cameraMuted)} />
+                      <VideoTile onAudioBlocked={handleAudioBlocked} stream={guest.stream} name={guest.name} muted={guest.peerId === selfPeerId || Boolean(guest.audioBlocked)} mirrored={guest.peerId === selfPeerId} cameraOff={guest.peerId === selfPeerId ? cameraOff : Boolean(guest.cameraBlocked || guest.cameraMuted)} />
                       {isHost && <div className="flex flex-wrap justify-center gap-1 bg-[#241c18] p-1.5">
                         <button type="button" aria-label={(guest.audioBlocked ? "Allow microphone for " : "Mute ") + guest.name} title={guest.audioBlocked ? "Allow guest to unmute" : "Mute guest"} onClick={() => moderateGuest(guest.peerId, guest.audioBlocked ? "allow-mic" : "mute-guest")} className="flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-lg bg-white/10 px-1 text-[10px] text-white hover:bg-white/20"><MicOff size={15} />{guest.audioBlocked ? "Allow mic" : "Mute"}</button>
                         <button type="button" aria-label={(guest.cameraBlocked ? "Allow camera for " : "Disable camera for ") + guest.name} title={guest.cameraBlocked ? "Allow guest to turn camera on" : "Turn guest camera off"} onClick={() => moderateGuest(guest.peerId, guest.cameraBlocked ? "allow-camera" : "camera-off")} className="flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-lg bg-white/10 px-1 text-[10px] text-white hover:bg-white/20"><CameraOff size={15} />{guest.cameraBlocked ? "Allow camera" : "Camera off"}</button>
@@ -886,7 +949,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
                   </button>
                   </>}
                   {isWatching && !admin && <><button type="button" onClick={() => { leaveRoom(); setJoinMode("request"); setView("go-live"); }} className="min-h-12 rounded-full border border-border px-6 text-sm text-primary">Join on camera</button></>}
-                  {isWatching && <button type="button" onClick={() => { void sfuRef.current?.startAudio(); stageRef.current?.querySelectorAll("video").forEach(video => { void video.play().catch(() => setError("Unable to play video. Please try again.")); }); }} className="min-h-12 rounded-full border border-border px-6 text-sm text-primary">Enable sound</button>}
+                  {audioBlocked && <p role="status" className="text-sm text-muted-foreground">Tap Enable sound on the video to hear the live room.</p>}
                   <button
                     type="button"
                     onClick={isHost ? endLive : leaveRoom}
