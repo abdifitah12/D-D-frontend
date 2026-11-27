@@ -65,12 +65,14 @@ function VideoTile({
   muted = false,
   mirrored = false,
   cameraOff = false,
+  featured = false,
 }: {
   stream: MediaStream | null;
   name: string;
   muted?: boolean;
   mirrored?: boolean;
   cameraOff?: boolean;
+  featured?: boolean;
 }) {
   const video = useRef<HTMLVideoElement>(null);
 
@@ -79,7 +81,7 @@ function VideoTile({
   }, [stream]);
 
   return (
-    <div className="relative aspect-video overflow-hidden rounded-2xl bg-[#241c18]">
+    <div className={`relative overflow-hidden rounded-2xl bg-[#241c18] ${featured ? "aspect-[3/4] sm:aspect-video" : "aspect-video"}`}>
       {stream && (
         <video
           ref={video}
@@ -96,7 +98,7 @@ function VideoTile({
           </div>
         </div>
       )}
-      <span className="absolute bottom-3 left-3 max-w-[80%] truncate rounded-full bg-black/55 px-3 py-1 text-sm text-white">
+      <span className={`absolute left-3 max-w-[65%] truncate rounded-full bg-black/55 px-3 py-1 text-sm text-white ${featured ? "top-3" : "bottom-3"}`}>
         {name}
       </span>
     </div>
@@ -837,11 +839,11 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
                 </div>}
                 <div ref={stageRef} className="relative isolate overflow-hidden rounded-2xl bg-[#241c18]">
                   <VideoTile
-                    stream={isHost ? localStream : host?.stream || null}
+                    featured stream={isHost ? localStream : host?.stream || null}
                     name={isHost ? name.trim() + " (Host · You)" : (host?.name || "Host") + " (Host)"}
                     muted={isHost || Boolean(host?.audioBlocked)} mirrored={isHost} cameraOff={isHost ? cameraOff : Boolean(host?.cameraBlocked || host?.cameraMuted)}
                   />
-                  {guestTiles.length > 0 && <div aria-label="Guests in the room" className="absolute right-2 top-2 bottom-12 z-10 flex w-[30%] max-w-60 flex-col gap-2 overflow-y-auto rounded-xl sm:right-4 sm:top-4 sm:gap-3">
+                  {guestTiles.length > 0 && <div aria-label="Guests in the room" className="absolute right-2 top-2 bottom-24 max-h-[45%] z-10 flex w-[30%] max-w-60 flex-col gap-2 overflow-y-auto rounded-xl sm:right-4 sm:top-4 sm:gap-3">
                     {guestTiles.map(guest => <div key={guest.peerId} className="shrink-0 overflow-hidden rounded-xl border-2 border-white/80 shadow-lg">
                       <VideoTile stream={guest.stream} name={guest.name} muted={guest.peerId === selfPeerId || Boolean(guest.audioBlocked)} mirrored={guest.peerId === selfPeerId} cameraOff={guest.peerId === selfPeerId ? cameraOff : Boolean(guest.cameraBlocked || guest.cameraMuted)} />
                       {isHost && <div className="flex flex-wrap justify-center gap-1 bg-[#241c18] p-1.5">
@@ -851,6 +853,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
                       </div>}
                     </div>)}
                   </div>}
+                <LiveCommentsPanel comments={liveComments} draft={commentDraft} connected={commentsConnected} busy={commentBusy} error={commentError} onDraft={setCommentDraft} onSubmit={submitComment} />
                 </div>
                 {error && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>}
                 {participants.length === 0 && !isWatching && (
@@ -893,7 +896,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
                     {isHost ? "End live for everyone" : isWatching ? "Stop watching" : "Leave room"}
                   </button>
                 </div>
-                <LiveCommentsPanel comments={liveComments} draft={commentDraft} connected={commentsConnected} busy={commentBusy} error={commentError} onDraft={setCommentDraft} onSubmit={submitComment} />
+
               </>
             ) : (
               <div className="mx-auto w-full max-w-3xl py-6">

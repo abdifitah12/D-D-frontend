@@ -13,24 +13,30 @@ export default function LiveCommentsPanel({ comments, draft, connected, busy, er
   const list = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
   useEffect(() => { if (list.current && pinned.current) list.current.scrollTop = list.current.scrollHeight; }, [comments]);
-  return <section className="mt-6 rounded-2xl border border-border bg-white p-4 sm:p-5" aria-label="Live comments">
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h3 className="text-xl text-primary">Live comments</h3><p className="text-xs text-muted-foreground">Visible to everyone watching</p></div>
-    <div ref={list} role="log" aria-label="Comments in this live room" aria-live="polite" tabIndex={0} style={{ scrollbarGutter: "stable" }} className="h-48 space-y-3 overflow-y-scroll overscroll-contain rounded-xl bg-secondary/30 p-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent sm:h-64 sm:p-4"
-      onScroll={() => { if (list.current) pinned.current = list.current.scrollHeight - list.current.scrollTop - list.current.clientHeight < 40; }}>
-      {comments.length === 0 ? <p className="py-5 text-center text-sm text-muted-foreground">No comments yet. Say hello while you watch.</p>
-        : comments.map(comment => <article key={comment.id} className="rounded-xl bg-white p-3 text-sm">
-          <div className="mb-1 flex flex-wrap items-center gap-2"><span className="font-semibold text-primary">{comment.name}</span><span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] capitalize text-muted-foreground">{comment.role}</span></div>
-          <p className="whitespace-pre-wrap break-words text-primary">{comment.text}</p>
-        </article>)}
-    </div>
-    <form onSubmit={onSubmit} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-      <div className="flex-1"><label htmlFor="live-comment" className="mb-2 block text-sm font-medium text-primary">Add a comment</label>
-        <textarea id="live-comment" value={draft} onChange={event => onDraft(event.target.value)} rows={2} maxLength={500} disabled={!connected || busy}
-          placeholder={connected ? "Write a comment…" : "Connecting comments…"} className="w-full resize-none rounded-xl border border-border bg-white p-3 text-base text-primary outline-none focus:border-accent disabled:opacity-60" />
+  return <section className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/80 via-black/35 to-transparent px-3 pb-3 pt-10 text-white sm:px-5 sm:pb-5" aria-label="Live comments">
+    <div className="max-w-md">
+      <h3 className="sr-only">Live comments</h3>
+      <div ref={list} role="log" aria-label="Comments in this live room" aria-live="polite" tabIndex={0}
+        className="pointer-events-auto max-h-32 w-[78%] space-y-2 overflow-y-auto overscroll-contain rounded-lg px-1 py-2 text-sm [scrollbar-width:thin] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white sm:max-h-44 sm:w-full"
+        onScroll={() => { if (list.current) pinned.current = list.current.scrollHeight - list.current.scrollTop - list.current.clientHeight < 40; }}>
+        {comments.length === 0 ? <p className="text-white/80 drop-shadow-md">Say hello while you watch.</p>
+          : comments.map(comment => <article key={comment.id} className="flex items-start gap-2 [text-shadow:0_1px_3px_rgb(0_0_0_/_90%)]">
+            <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-black/40 text-xs font-semibold ring-1 ring-white/25">{comment.name.slice(0, 1).toUpperCase()}</span>
+            <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><span className="font-semibold">{comment.name}</span>{comment.role !== "viewer" && <span className="text-[10px] capitalize text-white/75">{comment.role}</span>}</div>
+              <p className="whitespace-pre-wrap break-words text-white/95">{comment.text}</p>
+            </div>
+          </article>)}
       </div>
-      <button type="submit" disabled={!connected || busy || !draft.trim()} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"><Send size={17} />{busy ? "Sending…" : "Send"}</button>
-    </form>
-    {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
-    {!connected && !error && <p role="status" className="mt-2 text-xs text-muted-foreground">Connecting to live comments.</p>}
+      <form onSubmit={onSubmit} className="pointer-events-auto mt-2 flex items-center gap-2">
+        <label htmlFor="live-comment" className="sr-only">Add a comment</label>
+        <input id="live-comment" value={draft} onChange={event => onDraft(event.target.value)} maxLength={500} disabled={!connected || busy}
+          placeholder={connected ? "Say something..." : "Connecting comments..."} autoComplete="off"
+          className="min-h-11 min-w-0 flex-1 rounded-full border border-white/25 bg-black/35 px-4 text-base text-white backdrop-blur-sm placeholder:text-white/80 focus:border-white focus:outline-none disabled:opacity-60" />
+        <button type="submit" aria-label={busy ? "Sending comment" : "Send comment"} disabled={!connected || busy || !draft.trim()}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-50"><Send size={19} /></button>
+      </form>
+      {error && <p role="alert" className="pointer-events-auto mt-2 rounded-lg bg-black/65 px-3 py-2 text-xs text-white">{error}</p>}
+      {!connected && !error && <p role="status" className="sr-only">Connecting to live comments.</p>}
+    </div>
   </section>;
 }
