@@ -570,6 +570,10 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
         stream.getTracks().forEach(track => track.stop());
         return;
       }
+      stream.getAudioTracks().forEach(track => { track.enabled = true; });
+      stream.getVideoTracks().forEach(track => { track.enabled = true; });
+      setMuted(false); setCameraOff(false); setHostMuted(false); setHostCameraOff(false);
+      setModerationNotice("");
       streamRef.current = stream;
       setLocalStream(stream);
 
@@ -924,7 +928,13 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
                     You’re live. Share this page so guests can join.
                   </p>
                 )}
-                {moderationNotice && <p role="status" className="mt-4 rounded-xl bg-secondary p-4 text-sm text-primary">{moderationNotice}</p>}
+                {moderationNotice && <div className="mt-4 rounded-xl bg-secondary p-4 text-sm text-primary">
+                  <p role="status">{moderationNotice}</p>
+                  {!isWatching && <div className="mt-3 flex flex-wrap gap-2">
+                    {!hostMuted && muted && <button type="button" onClick={toggleMuted} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 text-primary-foreground"><Mic size={17} />Turn on microphone</button>}
+                    {!hostCameraOff && cameraOff && <button type="button" onClick={toggleCamera} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 text-primary-foreground"><Camera size={17} />Turn on camera</button>}
+                  </div>}
+                </div>}
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                   {!isWatching && <>
                   <button
