@@ -94,7 +94,7 @@ function VideoTile({
       element.muted = true;
       void element.play().catch(() => {});
     });
-  }, [stream, muted, onAudioBlocked]);
+  }, [stream, muted, cameraOff, onAudioBlocked]);
 
   return (
     <div className={`relative overflow-hidden rounded-2xl bg-[#241c18] ${expanded ? "h-full w-full" : featured ? "aspect-[3/4] sm:aspect-video" : "aspect-video"}`}>
@@ -674,10 +674,9 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
               setCameraOff(true);
               void sfuRef.current?.camera(true).catch(() => setError("Unable to turn camera off."));
             } else if (!cameraBlocked && devices.cameraBlocked && devices.restoreCamera) {
-              cameraTracks.forEach(track => { if (track.readyState === "live") track.enabled = true; });
-              setCameraOff(false);
               devices.restoreCamera = false;
-              void sfuRef.current?.camera(false).catch(() => { setCameraOff(true); setError("Camera is allowed. Tap Turn on camera to retry."); });
+              devices.cameraBlocked = false;
+              void restoreGuestCamera();
             }
             devices.audioBlocked = audioBlocked;
             devices.cameraBlocked = cameraBlocked;
@@ -804,14 +803,46 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
     void sfuRef.current?.mute(next).catch(() => setError("Unable to change microphone. Please try again."));
   }
 
-  function toggleCamera() {
-    if (hostCameraOff) return;
-    const next = !cameraOff;
-    streamRef.current?.getVideoTracks().forEach((track) => { track.enabled = !next; });
-    setCameraOff(next);
-    void sfuRef.current?.camera(next).catch(() => setError("Unable to change camera. Please try again."));
+  async function restoreGuestCamera() {
+    const stream = streamRef.current;
+    if (!stream) return;
+    const attempt = attemptRef.current;
+    try {
+      if (sfuRef.current) await sfuRef.current.camera(false);
+      let tracks = stream.getVideoTracks().filter(track => track.readyState === "live");
+      if (!tracks.length && !sfuRef.current) {
+        const captured = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        if (attempt !== attemptRef.current || moderatorDevices.current.cameraBlocked) { captured.getTracks().forEach(track => track.stop()); return; }
+        const track = captured.getVideoTracks()[0];
+        if (!track) throw new Error("No camera is available.");
+        try {
+          await Promise.all([...peersRef.current.values()].map(async peer => {
+            const sender = peer.getSenders().find(sender => sender.track?.kind === "video");
+            if (sender) await sender.replaceTrack(track);
+          }));
+        } catch (failure) { captured.getTracks().forEach(track => track.stop()); throw failure; }
+        stream.getVideoTracks().forEach(previous => stream.removeTrack(previous));
+        stream.addTrack(track);
+        tracks = [track];
+      }
+      if (attempt !== attemptRef.current || moderatorDevices.current.cameraBlocked) return;
+      tracks.forEach(track => { track.enabled = true; });
+      setLocalStream(new MediaStream(stream.getTracks()));
+      setCameraOff(false);
+      setError("");
+    } catch {
+      setCameraOff(true);
+      setError("Camera could not restart. Check the browser camera permission and tap Turn on camera again.");
+    }
   }
 
+  function toggleCamera() {
+    if (hostCameraOff) return;
+    if (cameraOff) { void restoreGuestCamera(); return; }
+    streamRef.current?.getVideoTracks().forEach(track => { track.enabled = false; });
+    setCameraOff(true);
+    void sfuRef.current?.camera(true).catch(() => setError("Unable to change camera. Please try again."));
+  }
   function decideRequest(peerId: string, decision: "approve" | "decline") {
     if (socketRef.current?.readyState !== WebSocket.OPEN) return;
     setError("");
@@ -938,7 +969,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
                       <VideoTile onAudioBlocked={handleAudioBlocked} stream={guest.stream} name={guest.name} muted={guest.peerId === selfPeerId || Boolean(guest.audioBlocked)} mirrored={guest.peerId === selfPeerId} cameraOff={guest.peerId === selfPeerId ? cameraOff : Boolean(guest.cameraBlocked || guest.cameraMuted)} />
                       {isHost && <div className="flex flex-wrap justify-center gap-1 bg-[#241c18] p-1.5">
                         <button type="button" aria-label={(guest.audioBlocked ? "Allow microphone for " : "Mute ") + guest.name} title={guest.audioBlocked ? "Allow guest to unmute" : "Mute guest"} onClick={() => moderateGuest(guest.peerId, guest.audioBlocked ? "allow-mic" : "mute-guest")} className="flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-lg bg-white/10 px-1 text-[10px] text-white hover:bg-white/20"><MicOff size={15} />{guest.audioBlocked ? "Allow mic" : "Mute"}</button>
-                        <button type="button" aria-label={(guest.cameraBlocked ? "Allow camera for " : "Disable camera for ") + guest.name} title={guest.cameraBlocked ? "Allow guest to turn camera on" : "Turn guest camera off"} onClick={() => moderateGuest(guest.peerId, guest.cameraBlocked ? "allow-camera" : "camera-off")} className="flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-lg bg-white/10 px-1 text-[10px] text-white hover:bg-white/20"><CameraOff size={15} />{guest.cameraBlocked ? "Allow camera" : "Camera off"}</button>
+                        <button type="button" aria-label={(guest.cameraBlocked ? "Allow camera for " : "Disable camera for ") + guest.name} title={guest.cameraBlocked ? "Restore guest camera if it was previously on" : "Turn guest camera off"} onClick={() => moderateGuest(guest.peerId, guest.cameraBlocked ? "allow-camera" : "camera-off")} className="flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-lg bg-white/10 px-1 text-[10px] text-white hover:bg-white/20"><CameraOff size={15} />{guest.cameraBlocked ? "Turn camera on" : "Turn camera off"}</button>
                         <button type="button" aria-label={"Remove " + guest.name + " from live"} title="Remove guest from live" onClick={() => moderateGuest(guest.peerId, "remove-guest")} className="flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-lg bg-red-600 px-1 text-[10px] text-white hover:bg-red-700"><UserMinus size={15} />Remove</button>
                       </div>}
                     </div>)}
