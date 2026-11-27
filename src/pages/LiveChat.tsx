@@ -5,7 +5,6 @@ import {
   CameraOff,
   Mic,
   MicOff,
-  Phone,
   PhoneOff,
   Users,
   Video,
@@ -766,7 +765,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
           <h1 className="text-3xl text-primary sm:text-4xl">{someoneIsLive ? listedHostName + " is live" : livePeople === null ? "Live at DnD Cafe" : admin ? "Start your live room" : "Live at DnD Cafe"}</h1>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">{someoneIsLive ? "Watch as a guest with your camera and microphone off, or join on camera immediately when a space is available." : livePeople === null ? "Checking the live room…" : admin ? "Start live from your admin studio. Visitors can watch or join as guests." : "The cafe is not live right now. Come back here to watch the next broadcast."}</p>
           <div className="mt-5 flex flex-wrap justify-center gap-3" role="group" aria-label="Live options">
-            {!admin && !someoneIsLive && <a href="tel:+14166881450" aria-label="Request to go live: call 416-688-1450" className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-primary px-8 py-4 text-base font-semibold text-primary-foreground"><Phone size={22} /><span>Request to Go Live<span className="mt-1 block text-sm font-normal">Call 416-688-1450</span></span></a>}
+            {!admin && !someoneIsLive && <button type="button" onClick={() => setView("request-broadcast")} className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-primary px-8 py-4 text-base font-semibold text-primary-foreground"><Video size={22} />Request to Go Live</button>}
             {view === "request-broadcast" && <button type="button" onClick={() => setView("auto")} className="min-h-14 rounded-full border border-border px-6 text-sm text-primary">Back to live</button>}
             {(admin || someoneIsLive) && <button type="button" disabled={livePeople === null && !directoryError}
               onClick={() => { if (someoneIsLive) { void watchLive(); } else { setView("go-live"); setJoinMode("start"); } }}
