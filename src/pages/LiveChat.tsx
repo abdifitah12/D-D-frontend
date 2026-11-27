@@ -154,6 +154,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
   const [cameraOff, setCameraOff] = useState(false);
   const [hostMuted, setHostMuted] = useState(false);
   const [hostCameraOff, setHostCameraOff] = useState(false);
+  const moderatorDevices = useRef({ audioBlocked: false, cameraBlocked: false, restoreAudio: false, restoreCamera: false });
   const [moderationNotice, setModerationNotice] = useState("");
   const [error, setError] = useState("");
   const socketRef = useRef<WebSocket | null>(null);
@@ -508,6 +509,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
 
   function leaveRoom() {
     setExpanded(false); setAudioBlocked(false);
+    moderatorDevices.current = { audioBlocked: false, cameraBlocked: false, restoreAudio: false, restoreCamera: false };
     if (stageRef.current && document.fullscreenElement === stageRef.current) void document.exitFullscreen().catch(() => {});
     if (commentTimeout.current) clearTimeout(commentTimeout.current);
     commentPending.current = null; setCommentBusy(false); setCommentsConnected(false);
@@ -650,19 +652,40 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
           setParticipants(current => current.map(member => member.peerId === data.peerId
             ? { ...member, audioBlocked: Boolean(data.audioBlocked), cameraBlocked: Boolean(data.cameraBlocked) } : member));
           if (data.peerId === peerId) {
-            setHostMuted(Boolean(data.audioBlocked));
-            setHostCameraOff(Boolean(data.cameraBlocked));
-            if (data.audioBlocked) {
-              streamRef.current?.getAudioTracks().forEach(track => { track.enabled = false; });
+            const devices = moderatorDevices.current;
+            const audioBlocked = Boolean(data.audioBlocked);
+            const cameraBlocked = Boolean(data.cameraBlocked);
+            const audioTracks = streamRef.current?.getAudioTracks() || [];
+            const cameraTracks = streamRef.current?.getVideoTracks() || [];
+            if (audioBlocked && !devices.audioBlocked) {
+              devices.restoreAudio = audioTracks.some(track => track.enabled && track.readyState === "live");
+              audioTracks.forEach(track => { track.enabled = false; });
               setMuted(true);
+              void sfuRef.current?.mute(true).catch(() => setError("Unable to mute microphone."));
+            } else if (!audioBlocked && devices.audioBlocked && devices.restoreAudio) {
+              audioTracks.forEach(track => { if (track.readyState === "live") track.enabled = true; });
+              setMuted(false);
+              devices.restoreAudio = false;
+              void sfuRef.current?.mute(false).catch(() => { setMuted(true); setError("Microphone is allowed. Tap Turn on microphone to retry."); });
             }
-            if (data.cameraBlocked) {
-              streamRef.current?.getVideoTracks().forEach(track => { track.enabled = false; });
+            if (cameraBlocked && !devices.cameraBlocked) {
+              devices.restoreCamera = cameraTracks.some(track => track.enabled && track.readyState === "live");
+              cameraTracks.forEach(track => { track.enabled = false; });
               setCameraOff(true);
+              void sfuRef.current?.camera(true).catch(() => setError("Unable to turn camera off."));
+            } else if (!cameraBlocked && devices.cameraBlocked && devices.restoreCamera) {
+              cameraTracks.forEach(track => { if (track.readyState === "live") track.enabled = true; });
+              setCameraOff(false);
+              devices.restoreCamera = false;
+              void sfuRef.current?.camera(false).catch(() => { setCameraOff(true); setError("Camera is allowed. Tap Turn on camera to retry."); });
             }
-            setModerationNotice(data.audioBlocked || data.cameraBlocked
+            devices.audioBlocked = audioBlocked;
+            devices.cameraBlocked = cameraBlocked;
+            setHostMuted(audioBlocked);
+            setHostCameraOff(cameraBlocked);
+            setModerationNotice(audioBlocked || cameraBlocked
               ? "A moderator has restricted your microphone or camera."
-              : "A moderator has allowed your microphone and camera. You can turn them on when ready.");
+              : "Your microphone and camera are allowed. Devices that were on before the restriction have been restored.");
           }
           return;
         }
