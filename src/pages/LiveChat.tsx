@@ -553,9 +553,11 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
     streamRef.current?.getTracks().forEach((track) => track.stop());
   }, []);
 
-  async function handleStart(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!name.trim() || roomState !== "idle") return;
+  async function handleStart(event?: FormEvent<HTMLFormElement>, approved?: OwnBroadcast) {
+    event?.preventDefault();
+    const startingName = approved?.name || name;
+    const permission = approved || broadcastPermission;
+    if (!startingName.trim() || roomState !== "idle") return;
     setError("");
 
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -597,11 +599,11 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
         hostTicket = (await response.json()).ticket;
         if (!hostTicket) throw new Error("Unable to authorize this live room.");
       }
-      if (!admin && broadcastPermission) {
-        hostTicket = (await startApprovedBroadcast(broadcastPermission)).ticket;
+      if (!admin && permission) {
+        hostTicket = (await startApprovedBroadcast(permission)).ticket;
       }
       if (attempt !== attemptRef.current) return;
-      const socket = new WebSocket(liveSocketUrl(peerId, name.trim(), admin || broadcastPermission ? "start" : "join", hostTicket));
+      const socket = new WebSocket(liveSocketUrl(peerId, startingName.trim(), admin || permission ? "start" : "join", hostTicket));
       socketRef.current = socket;
       joinTimeoutRef.current = setTimeout(() => {
         if (!joinedRef.current) {
@@ -708,7 +710,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
           setCommentsConnected(true);
           setSelfPeerId(peerId);
           setHostPeerId(data.hostPeerId || peerId);
-          if (!admin && broadcastPermission && data.hostPeerId === peerId) {
+          if (!admin && permission && data.hostPeerId === peerId) {
             saveOwnBroadcast(null); setBroadcastPermission(null);
           }
           if (joinTimeoutRef.current) clearTimeout(joinTimeoutRef.current);
@@ -898,7 +900,7 @@ export default function LiveChat({ admin = false, monitorOnOpen = false }: { adm
         </div>}
 
         {view === "request-broadcast" && roomState === "idle" ? (
-          <BroadcastRequestForm onReady={permission => { setBroadcastPermission(permission); setName(permission.name); setView("go-live"); }} />
+          <BroadcastRequestForm onReady={permission => { setBroadcastPermission(permission); setName(permission.name); setView("go-live"); void handleStart(undefined, permission); }} />
         ) : entryView === "browse" && roomState === "idle" ? (
           <div className="mx-auto max-w-4xl rounded-[1.75rem] border border-border bg-white p-6 shadow-xl sm:p-8">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
